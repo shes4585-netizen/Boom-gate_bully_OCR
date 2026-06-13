@@ -2,13 +2,13 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>미니 차량 스캔 팝업</title>
+    <title>모니터링</title>
     <style>
         body {
             margin: 0;
-            padding: 15px;
-            background-color: #1a202c; /* 관제실용 어두운 배경색 */
-            color: white;
+            padding: 8px 12px;
+            background-color: #ffffff; /* 팝업창 전체 배경 흰색 */
+            color: #333333;
             font-family: 'Malgun Gothic', sans-serif;
             display: flex;
             flex-direction: column;
@@ -19,37 +19,36 @@
             overflow: hidden;
         }
 
-        /* 📟 경광등과 입력창을 가로로 나란히 배치하는 컨테이너 */
+        /* 📟 경광등과 입력창 가로 정렬 컨테이너 (여백 최소화) */
         .main-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
-            max-width: 210px;
         }
 
         /* 🚨 좌측 단일 경광등 이미지 스타일 */
         .siren-img {
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             object-fit: contain;
             border-radius: 4px;
             flex-shrink: 0;
         }
 
-        /* 📟 차량번호 표시창 영역 */
+        /* 📟 차량번호 표시창 영역 (흰색 배경 및 깔끔한 테두리) */
         .display-box {
             flex: 1;
-            background-color: #ffffff;
-            border: 4px solid #4a5568;
-            border-radius: 8px;
-            padding: 10px 0;
+            background-color: #ffffff; /* 입력창 배경 흰색 */
+            border: 3px solid #cbd5e0; /* 부드러운 회색 테두리 */
+            border-radius: 6px;
+            padding: 8px 0;
             text-align: center;
-            box-shadow: inset 0 3px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        /* 🔤 번호판 내부 텍스트 기본 스타일 */
+        /* 🔤 번호판 내부 텍스트 스타일 */
         .car-number-input {
             width: 95%;
             border: none;
@@ -58,14 +57,14 @@
             font-size: 26px;
             font-weight: 900;
             letter-spacing: 0.5px;
-            color: #000000;
+            color: #2d3748;
             outline: none;
             padding: 0;
             margin: 0;
             font-family: 'Malgun Gothic', sans-serif;
         }
 
-        /* 🚨 [주의 O] 상습 위반 차량: 빨간색 굵게 깜빡임 애니메이션 */
+        /* 🚨 [주의 O] 상습 위반 차량: 빨간색 굵게 깜빡임 */
         @keyframes blinkRed {
             0% { opacity: 1; color: #e53e3e; }
             50% { opacity: 0.1; color: #e53e3e; }
@@ -75,7 +74,7 @@
             animation: blinkRed 0.8s linear infinite;
         }
 
-        /* 🟢 [주의 X] 일반 위반 차량: 녹색 굵게 깜빡임 애니메이션 */
+        /* 🟢 [주의 X] 일반 위반 차량: 녹색 굵게 깜빡임 */
         @keyframes blinkGreen {
             0% { opacity: 1; color: #38a169; }
             50% { opacity: 0.1; color: #38a169; }
@@ -85,13 +84,13 @@
             animation: blinkGreen 0.8s linear infinite;
         }
 
-        /* ℹ️ 하단 상태 안내 문구 */
+        /* ℹ️ 하단 상태 안내 문구 (바짝 붙여서 여백 감소) */
         .status-text {
-            margin-top: 15px;
-            font-size: 12px;
+            margin-top: 6px;
+            font-size: 11px;
             font-weight: bold;
-            color: #a0aec0;
-            letter-spacing: 0.5px;
+            color: #718096;
+            letter-spacing: 0.3px;
         }
     </style>
 </head>
@@ -105,10 +104,9 @@
         </div>
     </div>
 
-    <div id="statusText" class="status-text">스캐너 연결 대기 중...</div>
+    <div id="statusText" class="status-text">차량 진입 대기 중</div>
 
     <script>
-        // 📡 메인창(index.html)으로부터 스캔 및 조회 결과 무선 신호 수신부
         window.addEventListener("message", function(event) {
             if (event.data && event.data.type === "POPUP_SEARCH") {
                 const inputEl = document.getElementById("popupInput");
@@ -117,43 +115,32 @@
                 
                 const num = event.data.carNumber;
                 
-                // 1. 초기화 스타일 클리어
                 inputEl.value = num || "----";
                 inputEl.className = "car-number-input"; 
-                inputEl.style.color = "#000000";
+                inputEl.style.color = "#2d3748";
 
-                // 빈 값 혹은 스캔 데이터가 없을 때 초기 상태 (100.png)
                 if (!num || num === "") {
                     inputEl.value = "----";
                     imgLeft.src = "100.png";
                     statusText.innerText = "차량 진입 대기 중";
-                    statusText.style.color = "#a0aec0";
+                    statusText.style.color = "#718096";
                     return;
                 }
 
-                // 2. 메인 데이터 매칭 여부에 따른 정밀 제어
                 if (event.data.hasMatch) {
-                    
                     if (event.data.isWarn) {
-                        // 🚨 Case A: 위반 이력이 있고 [주의] 체크가 켜진 고위험 차량
-                        inputEl.classList.add("status-warn"); // 빨간색 깜빡임 효과
-                        imgLeft.src = "100-3.gif";            // 좌측 이미지를 움짤(gif)로 변경
-                        
+                        inputEl.classList.add("status-warn");
+                        imgLeft.src = "100-3.gif";
                         statusText.innerText = "🚨 위험: 상습 위반 차량 진입!";
                         statusText.style.color = "#e53e3e";
                     } else {
-                        // 🟢 Case B: 위반 이력은 있으나 [주의]가 꺼진 일반 위반 차량
-                        inputEl.classList.add("status-match"); // 녹색 굵은 깜빡임 효과
-                        imgLeft.src = "100.png";               // 좌측 이미지를 기본 100.png로 유지
-                        
+                        inputEl.classList.add("status-match");
+                        imgLeft.src = "100.png";
                         statusText.innerText = "🟢 안내: 과거 위반 이력 차량";
                         statusText.style.color = "#38a169";
                     }
-                    
                 } else {
-                    // 🔴 Case C: 위반 이력 목록에 없는 깨끗한 정상 차량
-                    imgLeft.src = "100.png";                   // 좌측 이미지를 기본 100.png로 유지
-                    
+                    imgLeft.src = "100.png";
                     statusText.innerText = "❌ 정상: 위반 이력 없음";
                     statusText.style.color = "#4a5568";
                 }
