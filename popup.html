@@ -6,8 +6,8 @@
     <style>
         body {
             margin: 0;
-            padding: 10px;
-            background-color: #1a202c; /* 어두운 관제실 스타일에 맞춘 배경색 */
+            padding: 15px;
+            background-color: #1a202c; /* 관제실용 어두운 배경색 */
             color: white;
             font-family: 'Malgun Gothic', sans-serif;
             display: flex;
@@ -19,44 +19,45 @@
             overflow: hidden;
         }
 
-        /* 🚨 사이렌/경광등 컨테이너 설정 */
-        .siren-container {
+        /* 📟 경광등과 입력창을 가로로 나란히 배치하는 컨테이너 */
+        .main-container {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            gap: 12px;
             width: 100%;
             max-width: 210px;
-            margin-bottom: 15px;
         }
 
+        /* 🚨 좌측 단일 경광등 이미지 스타일 */
         .siren-img {
-            width: 65px;
-            height: 65px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
             border-radius: 4px;
+            flex-shrink: 0;
         }
 
         /* 📟 차량번호 표시창 영역 */
         .display-box {
-            width: 100%;
-            max-width: 200px;
+            flex: 1;
             background-color: #ffffff;
             border: 4px solid #4a5568;
             border-radius: 8px;
-            padding: 12px 0;
+            padding: 10px 0;
             text-align: center;
             box-shadow: inset 0 3px 6px rgba(0,0,0,0.3);
         }
 
         /* 🔤 번호판 내부 텍스트 기본 스타일 */
         .car-number-input {
-            width: 90%;
+            width: 95%;
             border: none;
             background: transparent;
             text-align: center;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 900;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             color: #000000;
             outline: none;
             padding: 0;
@@ -86,7 +87,7 @@
 
         /* ℹ️ 하단 상태 안내 문구 */
         .status-text {
-            margin-top: 12px;
+            margin-top: 15px;
             font-size: 12px;
             font-weight: bold;
             color: #a0aec0;
@@ -96,24 +97,22 @@
 </head>
 <body>
 
-    <div class="siren-container">
-        <img id="sirenLeft" src="100-4.png" alt="경광등 좌" class="siren-img">
-        <img id="sirenRight" src="100-4.png" alt="경광등 우" class="siren-img">
-    </div>
-
-    <div class="display-box">
-        <input type="text" id="popupInput" class="car-number-input" value="----" readonly>
+    <div class="main-container">
+        <img id="sirenLeft" src="100.png" alt="경광등" class="siren-img">
+        
+        <div class="display-box">
+            <input type="text" id="popupInput" class="car-number-input" value="----" readonly>
+        </div>
     </div>
 
     <div id="statusText" class="status-text">스캐너 연결 대기 중...</div>
 
     <script>
-        // 📡 메인창(index.html)으로부터 스캔 및 조회 결과 무선 신호 수신 안테나
+        // 📡 메인창(index.html)으로부터 스캔 및 조회 결과 무선 신호 수신부
         window.addEventListener("message", function(event) {
             if (event.data && event.data.type === "POPUP_SEARCH") {
                 const inputEl = document.getElementById("popupInput");
                 const imgLeft = document.getElementById("sirenLeft");
-                const imgRight = document.getElementById("sirenRight");
                 const statusText = document.getElementById("statusText");
                 
                 const num = event.data.carNumber;
@@ -123,41 +122,37 @@
                 inputEl.className = "car-number-input"; 
                 inputEl.style.color = "#000000";
 
-                // 빈 값 혹은 스캔 데이터가 안 넘어왔을 때 초기 상태 회귀
+                // 빈 값 혹은 스캔 데이터가 없을 때 초기 상태 (100.png)
                 if (!num || num === "") {
                     inputEl.value = "----";
-                    imgLeft.src = "100-4.png";
-                    imgRight.src = "100-4.png";
+                    imgLeft.src = "100.png";
                     statusText.innerText = "차량 진입 대기 중";
                     statusText.style.color = "#a0aec0";
                     return;
                 }
 
-                // 2. 메인 데이터 매칭 여부 정밀 분석 및 액션 제어
+                // 2. 메인 데이터 매칭 여부에 따른 정밀 제어
                 if (event.data.hasMatch) {
                     
                     if (event.data.isWarn) {
                         // 🚨 Case A: 위반 이력이 있고 [주의] 체크가 켜진 고위험 차량
-                        inputEl.classList.add("status-warn"); // 빨간색 깜빡임 CSS 클래스 주입
-                        imgLeft.src = "100-3.gif";            // 회전하는 애니메이션 이미지 작동
-                        imgRight.src = "100-3.gif";
+                        inputEl.classList.add("status-warn"); // 빨간색 깜빡임 효과
+                        imgLeft.src = "100-3.gif";            // 좌측 이미지를 움짤(gif)로 변경
                         
                         statusText.innerText = "🚨 위험: 상습 위반 차량 진입!";
                         statusText.style.color = "#e53e3e";
                     } else {
-                        // 🟢 Case B: 위반 이력은 존재하나 [주의]가 꺼진 일반 위반 차량 (신규 요청 반영)
-                        inputEl.classList.add("status-match"); // 녹색 굵은 깜빡임 CSS 클래스 주입
-                        imgLeft.src = "100-4.png";             // 정지 상태 고정 이미지 유지
-                        imgRight.src = "100-4.png";
+                        // 🟢 Case B: 위반 이력은 있으나 [주의]가 꺼진 일반 위반 차량
+                        inputEl.classList.add("status-match"); // 녹색 굵은 깜빡임 효과
+                        imgLeft.src = "100.png";               // 좌측 이미지를 기본 100.png로 유지
                         
                         statusText.innerText = "🟢 안내: 과거 위반 이력 차량";
                         statusText.style.color = "#38a169";
                     }
                     
                 } else {
-                    // 🔴 Case C: 위반 이력 목록에 아예 없는 깨끗한 정상 차량
-                    imgLeft.src = "100-4.png";                 // 정지 상태 고정 이미지 유지
-                    imgRight.src = "100-4.png";
+                    // 🔴 Case C: 위반 이력 목록에 없는 깨끗한 정상 차량
+                    imgLeft.src = "100.png";                   // 좌측 이미지를 기본 100.png로 유지
                     
                     statusText.innerText = "❌ 정상: 위반 이력 없음";
                     statusText.style.color = "#4a5568";
