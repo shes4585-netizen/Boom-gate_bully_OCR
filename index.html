@@ -360,27 +360,32 @@
             renderTablePage();
         }
 
-        // 🚨 팝업창 연동용 수신부
+        // 🚨 팝업창 연동 및 수신부 제어 로직 (수정 완료)
         window.addEventListener("message", function(event) {
             if (event.data && event.data.type === "POPUP_SEARCH") {
                 const targetNum = event.data.carNumber;
                 document.getElementById("searchInput").value = targetNum;
                 sortMainData();
                 if (targetNum === "") { focusedRecordId = null; searchCar(); return; }
+                
                 const foundItem = carData.find(item => {
                     if (!item.number) return false;
                     return item.number.replace(/[^0-9]/g, "").slice(-4) === targetNum || item.number.slice(-4) === targetNum;
                 });
+                
                 if (foundItem) {
                     focusedRecordId = parseInt(foundItem.id);
                     const globalIndex = carData.findIndex(item => parseInt(item.id) === focusedRecordId);
                     if (globalIndex > -1) currentPage = Math.floor(globalIndex / itemsPerPage) + 1;
                     searchCar();
-                } else { focusedRecordId = null; searchCar(); }
+                } else { 
+                    focusedRecordId = null; 
+                    searchCar(); 
+                }
             }
         });
 
-        // 🚨 [신규 추가] 파이썬 자동 스캐너 백그라운드 OCR 무선 데이터 수신 안테나
+        // 🚨 파이썬 자동 스캐너 백그라운드 OCR 무선 데이터 수신 안테나 (수정 완료)
         function connectOCRWebSocket() {
             const socket = new WebSocket("ws://localhost:8080");
             
@@ -392,13 +397,18 @@
                     // 메인 검색창에 자동 주입
                     document.getElementById("searchInput").value = detectedNum;
                     
-                    // 해당 차량 서치 및 포커싱 구동
+                    // 해당 차량 서치 및 매칭 이력 필터링
                     const foundItem = carData.find(item => {
                         if (!item.number) return false;
                         return item.number.replace(/[^0-9]/g, "").slice(-4) === detectedNum || item.number.slice(-4) === detectedNum;
                     });
                     
+                    let hasMatch = false;
+                    let isWarnCar = false;
+                    
                     if (foundItem) {
+                        hasMatch = true;
+                        isWarnCar = foundItem.isWarn ? true : false;
                         focusedRecordId = parseInt(foundItem.id);
                         const gIdx = carData.findIndex(item => parseInt(item.id) === focusedRecordId);
                         if (gIdx > -1) currentPage = Math.floor(gIdx / itemsPerPage) + 1;
@@ -408,15 +418,20 @@
                     
                     searchCar();
                     
-                    // 열려있는 popup.html 미니창으로 실시간 동기화 무선 송신
+                    // 💡 [핵심 연동] 열려있는 popup.html 미니창으로 매칭 유무 및 주의 옵션을 정밀 분석하여 상태값 무선 송신
                     if (popupWindow && !popupWindow.closed) {
-                        popupWindow.postMessage({ type: "POPUP_SEARCH", carNumber: detectedNum }, "*");
+                        popupWindow.postMessage({ 
+                            type: "POPUP_SEARCH", 
+                            carNumber: detectedNum,
+                            hasMatch: hasMatch,       // 매칭 레코드 존재 여부 (true/false)
+                            isWarn: isWarnCar         // 주의 체크 여부 (true/false)
+                        }, "*");
                     }
                 }
             };
             
             socket.onclose = function() {
-                // 파이썬 프로그램을 껐다 켰을 때 자동 재연동 로직 안전 장치 달기
+                // 파이썬 프로그램 리스타트 시 자동 재연동 안전 장치
                 setTimeout(connectOCRWebSocket, 3000);
             };
         }
