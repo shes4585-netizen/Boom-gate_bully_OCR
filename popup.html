@@ -110,53 +110,56 @@
     <script>
         // 📡 메인창(index.html) 무선 신호 연동 수신 안테나
         window.addEventListener("message", function(event) {
-            if (event.data && event.data.type === "POPUP_SEARCH") {
-                const inputEl = document.getElementById("popupInput");
-                const imgLeft = document.getElementById("sirenLeft");
-                const statusText = document.getElementById("statusText");
-                
-                const num = event.data.carNumber;
-                
-                // 1. 스타일 및 텍스트 초기화
-                inputEl.value = num || "";
-                inputEl.className = "car-number-input"; 
-                inputEl.style.color = "#1a202c";
+            // 1. 신호가 비어있거나 타입이 다르면 즉시 차단
+            if (!event.data || event.data.type !== "POPUP_SEARCH") return;
 
-                // 차량 번호가 없거나 빈 값일 때 대기 상태 안전 회귀
-                if (!num || num === "") {
-                    inputEl.value = "";
-                    imgLeft.src = "100.png";
-                    statusText.innerText = "차량 진입 대기 중";
-                    statusText.style.color = "#4a5568";
-                    return;
-                }
+            const inputEl = document.getElementById("popupInput");
+            const imgLeft = document.getElementById("sirenLeft");
+            const statusText = document.getElementById("statusText");
+            
+            // 2. 메인창에서 보낸 데이터 안전하게 추출
+            const num = event.data.carNumber;
+            const hasMatch = event.data.hasMatch;
+            const isWarn = event.data.isWarn;
+            
+            // 3. 스타일 및 텍스트 초기화
+            inputEl.className = "car-number-input"; 
+            inputEl.style.color = "#1a202c";
 
-                // 2. 스캔 차량 데이터 성격 분석 후 시인성 제어
-                if (event.data.hasMatch) {
-                    
-                    if (event.data.isWarn) {
-                        // 🚨 Case A: [주의] 상습 위반 차량 -> 빨간색 왕특대 글자 깜빡임 + 움짤 교체
-                        inputEl.classList.add("status-warn");
-                        imgLeft.src = "100-3.gif";
-                        
-                        statusText.innerText = "🚨 위험: 상습 위반 차량 진입!";
-                        statusText.style.color = "#e53e3e";
-                    } else {
-                        // 🟢 Case B: [일반] 과거 위반 차량 -> 녹색 왕특대 글자 깜빡임 + 기본 이미지 고정
-                        inputEl.classList.add("status-match");
-                        imgLeft.src = "100.png";
-                        
-                        statusText.innerText = "🟢 안내: 과거 위반 이력 차량";
-                        statusText.style.color = "#38a169";
-                    }
-                    
+            // 차량 번호가 아예 없거나 빈 값일 때 대기 상태 안전 회귀
+            if (!num || num.toString().trim() === "") {
+                inputEl.value = "";
+                imgLeft.src = "100.png";
+                statusText.innerText = "차량 진입 대기 중";
+                statusText.style.color = "#4a5568";
+                return;
+            }
+
+            // 실시간으로 전달받은 차량 번호 화면 입력창에 주입!
+            inputEl.value = num;
+
+            // 4. 스캔 차량 데이터 성격 분석 후 시인성 제어
+            if (hasMatch === true || hasMatch === "true") {
+                
+                if (isWarn === true || isWarn === "true") {
+                    // 🚨 Case A: [주의] 상습 위반 차량 -> 빨간색 글자 깜빡임 + 움짤 교체
+                    inputEl.classList.add("status-warn");
+                    imgLeft.src = "100-3.gif";
+                    statusText.innerText = "🚨 위험: 상습 위반 차량 진입!";
+                    statusText.style.color = "#e53e3e";
                 } else {
-                    // 🔴 Case C: 깨끗한 정상 차량 -> 검은색 글자 유지 + 기본 이미지 고정
+                    // 🟢 Case B: [일반] 과거 위반 차량 -> 녹색 글자 깜빡임 + 기본 이미지 고정
+                    inputEl.classList.add("status-match");
                     imgLeft.src = "100.png";
-                    
-                    statusText.innerText = "❌ 정상: 위반 이력 없음";
-                    statusText.style.color = "#2d3748";
+                    statusText.innerText = "🟢 안내: 과거 위반 이력 차량";
+                    statusText.style.color = "#38a169";
                 }
+                
+            } else {
+                // ⚪ Case C: 깨끗한 정상 차량 -> 검은색 글자 유지 + 기본 이미지 고정
+                imgLeft.src = "100.png";
+                statusText.innerText = "❌ 정상: 위반 이력 없음";
+                statusText.style.color = "#2d3748";
             }
         });
     </script>
