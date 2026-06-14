@@ -179,9 +179,9 @@
 
     <script>
         const defaultData = [
-            { id: 1, type: "일반", inTime: "2026-05-25 10:30", outTime: "2026-05-25 14:45", number: "123가4567", dong: "101동", ho: "1203호", note: "방문객 장기 주차 등록", isWarn: false },
-            { id: 2, type: "입주민", inTime: "2026-05-24 14:15", outTime: "2026-05-24 15:20", number: "98나7654", dong: "104동", ho: "502호",  note: "입주민 주차증 발급 완료", isWarn: true },
-            { id: 3, type: "일반", inTime: "2026-05-23 09:00", outTime: "", number: "11가1111", dong: "102동", ho: "101호",  note: "상습 불법주차 주의", isWarn: false }
+            { id: 1, type: "일반", inTime: "2026-05-25 10:30", outTime: "2026-05-25 14:45", number: "123가4567", dong: "101동", ho: "1203호", note: "[정기권만료] 방문객 장기 주차 등록", isWarn: false },
+            { id: 2, type: "입주민", inTime: "2026-05-24 14:15", outTime: "2026-05-24 15:20", number: "98나7654", dong: "104동", ho: "502호",  note: "[입주민행세] 주차증 발급 불응", isWarn: true },
+            { id: 3, type: "일반", inTime: "2026-05-23 09:00", outTime: "", number: "11가1111", dong: "102동", ho: "101호",  note: "[차단바무단통과] 상습 불법주차 주의", isWarn: false }
         ];
 
         let carData = JSON.parse(localStorage.getItem("carData"));
@@ -320,18 +320,25 @@
             if (currentPage > maxPage) currentPage = maxPage;
             renderTablePage();
             
-            // 수동 검색 시에도 오픈되어 있는 팝업창으로 연동 동기화 살포
             if (popupWindow && !popupWindow.closed && input.length === 4) {
-                const foundCar = carData.find(item => {
+                // 💡 핵심 수정: 동일 차량의 매칭된 모든 레코드를 수집
+                const matchedRecords = carData.filter(item => {
                     if (!item.number) return false;
                     return item.number.replace(/[^0-9]/g, "").slice(-4) === input || item.number.slice(-4) === input;
                 });
+
+                const hasMatch = matchedRecords.length > 0;
+                const isWarn = matchedRecords.some(item => item.isWarn); // 하나라도 주의차량이면 켜짐
+                
+                // 모든 매칭 레코드의 비고 내용을 배열로 모아서 전송
+                const notesArray = matchedRecords.map(item => item.note || "");
+
                 popupWindow.postMessage({
                     type: "POPUP_SEARCH",
                     carNumber: input,
-                    hasMatch: foundCar ? true : false,
-                    isWarn: foundCar && foundCar.isWarn ? true : false,
-                    carNote: foundCar ? (foundCar.note || "") : ""
+                    hasMatch: hasMatch,
+                    isWarn: isWarn,
+                    carNotesArray: notesArray // 배열 데이터로 전송 구조 개편
                 }, "*");
             }
         }
@@ -343,13 +350,13 @@
                 sortMainData();
                 if (targetNum === "") { focusedRecordId = null; searchCar(); return; }
                 
-                const foundItem = carData.find(item => {
+                const matchedRecords = carData.filter(item => {
                     if (!item.number) return false;
                     return item.number.replace(/[^0-9]/g, "").slice(-4) === targetNum || item.number.slice(-4) === targetNum;
                 });
                 
-                if (foundItem) {
-                    focusedRecordId = parseInt(foundItem.id);
+                if (matchedRecords.length > 0) {
+                    focusedRecordId = parseInt(matchedRecords[0].id);
                     const globalIndex = carData.findIndex(item => parseInt(item.id) === focusedRecordId);
                     if (globalIndex > -1) currentPage = Math.floor(globalIndex / itemsPerPage) + 1;
                     searchCar();
@@ -367,23 +374,22 @@
                 const data = JSON.parse(event.data);
                 if (data.type === "AUTO_DETECT") {
                     const detectedNum = data.carNumber;
-                    
                     document.getElementById("searchInput").value = detectedNum;
                     
-                    const foundItem = carData.find(item => {
+                    const matchedRecords = carData.filter(item => {
                         if (!item.number) return false;
                         return item.number.replace(/[^0-9]/g, "").slice(-4) === detectedNum || item.number.slice(-4) === detectedNum;
                     });
                     
                     let hasMatch = false;
                     let isWarnCar = false;
-                    let currentNote = "";
+                    let notesArray = [];
                     
-                    if (foundItem) {
+                    if (matchedRecords.length > 0) {
                         hasMatch = true;
-                        isWarnCar = foundItem.isWarn ? true : false;
-                        currentNote = foundItem.note || "";
-                        focusedRecordId = parseInt(foundItem.id);
+                        isWarnCar = matchedRecords.some(item => item.isWarn);
+                        notesArray = matchedRecords.map(item => item.note || "");
+                        focusedRecordId = parseInt(matchedRecords[0].id);
                         const gIdx = carData.findIndex(item => parseInt(item.id) === focusedRecordId);
                         if (gIdx > -1) currentPage = Math.floor(gIdx / itemsPerPage) + 1;
                     } else {
@@ -398,20 +404,16 @@
                             carNumber: detectedNum,
                             hasMatch: hasMatch,
                             isWarn: isWarnCar,
-                            carNote: currentNote
+                            carNotesArray: notesArray
                         }, "*");
                     }
                 }
             };
             
-            socket.onclose = function() {
-                setTimeout(connectOCRWebSocket, 3000);
-            };
+            socket.onclose = function() { setTimeout(connectOCRWebSocket, 3000); };
         }
         
-        document.addEventListener("DOMContentLoaded", () => {
-            connectOCRWebSocket();
-        });
+        document.addEventListener("DOMContentLoaded", () => { connectOCRWebSocket(); });
 
         function addData() {
             const dateVal = document.getElementById("addInDate").value; const hourVal = document.getElementById("addInHour").value; const minVal = document.getElementById("addInMin").value;
