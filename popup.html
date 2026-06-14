@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>모니터링</title>
     <style>
+        /* 기본 상태는 화면 정중앙 배치 */
         body {
             margin: 0;
             padding: 20px;
@@ -17,20 +18,38 @@
             height: 100vh;
             box-sizing: border-box;
             overflow: hidden;
+            transition: all 0.4s ease-in-out; /* 위치 부드럽게 무빙 치는 트랜지션 효과 */
         }
+
+        /* 🚨 비고 데이터가 들어왔을 때 몸통(Body)을 상단 정렬로 틀어 공간 확보 */
+        body.has-note {
+            justify-content: flex-start;
+            padding-top: 15px;
+        }
+
+        /* 경광등 컨테이너 */
         .siren-container {
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
             margin-bottom: 20px;
+            transition: all 0.4s ease-in-out;
         }
+
+        /* 비고 확보 시 경광등의 아래 마진을 줄여 상단 밀착 가속 */
+        body.has-note .siren-container {
+            margin-bottom: 10px;
+        }
+
         .siren-img {
             width: 75px;
             height: 75px;
             object-fit: contain;
             border-radius: 6px;
         }
+
+        /* 차량번호 표시창 영역 */
         .display-box {
             width: 100%;
             max-width: 210px;
@@ -40,7 +59,10 @@
             padding: 16px 0;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            transition: all 0.4s ease-in-out;
         }
+
+        /* 번호판 내부 텍스트 스타일 */
         .car-number-input {
             width: 95%;
             border: none;
@@ -55,6 +77,8 @@
             margin: 0;
             font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
         }
+
+        /* 🚨 상습 위반 차량 애니메이션 */
         @keyframes blinkRed {
             0% { opacity: 1; color: #e53e3e; }
             50% { opacity: 0.1; color: #e53e3e; }
@@ -63,6 +87,8 @@
         .status-warn {
             animation: blinkRed 0.8s linear infinite;
         }
+
+        /* 🟢 일반 위반 차량 애니메이션 */
         @keyframes blinkGreen {
             0% { opacity: 1; color: #38a169; }
             50% { opacity: 0.1; color: #38a169; }
@@ -71,6 +97,8 @@
         .status-match {
             animation: blinkGreen 0.8s linear infinite;
         }
+
+        /* 하단 상태 안내 문구 */
         .status-text {
             margin-top: 20px;
             font-size: 15px;
@@ -78,6 +106,29 @@
             color: #4a5568;
             letter-spacing: 0.5px;
             text-align: center;
+            transition: all 0.4s ease-in-out;
+        }
+        
+        body.has-note .status-text {
+            margin-top: 10px; /* 비고 활성화 시 문구 여백도 줄임 */
+        }
+
+        /* 📝 확보된 하단 공간에 표출될 비고(Note) 전용 스타일 */
+        .note-text {
+            margin-top: 12px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #2d3748;
+            background-color: #fffaf0; /* 시인성을 위해 은은한 미색 배치 */
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 2px dashed #f6ad55; /* 주황빛 대시 테두리로 눈에 확 띄게 처리 */
+            width: 90%;
+            max-width: 210px;
+            word-break: break-all;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: none; /* 평소엔 공간 차지 안 하도록 가림 */
         }
     </style>
 </head>
@@ -92,21 +143,30 @@
     </div>
 
     <div id="statusText" class="status-text">차량 진입 대기 중</div>
+    
+    <div id="noteText" class="note-text"></div>
 
     <script>
         window.addEventListener("message", function(event) {
             if (!event.data || event.data.type !== "POPUP_SEARCH") return;
 
+            const bodyEl = document.body;
             const inputEl = document.getElementById("popupInput");
             const imgLeft = document.getElementById("sirenLeft");
             const statusText = document.getElementById("statusText");
+            const noteText = document.getElementById("noteText");
             
             const num = event.data.carNumber;
             const hasMatch = event.data.hasMatch;
             const isWarn = event.data.isWarn;
+            const carNote = event.data.carNote; // 메인창에서 전달한 비고 꺽쇠 데이터
             
+            // 초기화
             inputEl.className = "car-number-input"; 
             inputEl.style.color = "#1a202c";
+            bodyEl.classList.remove("has-note");
+            noteText.style.display = "none";
+            noteText.innerText = "";
 
             if (!num || num.toString().trim() === "") {
                 inputEl.value = "";
@@ -118,6 +178,7 @@
 
             inputEl.value = num;
 
+            // 데이터 분석 및 상태 제어
             if (hasMatch === true || hasMatch === "true") {
                 if (isWarn === true || isWarn === "true") {
                     inputEl.classList.add("status-warn");
@@ -134,6 +195,13 @@
                 imgLeft.src = "100.png";
                 statusText.innerText = "❌ 정상: 위반 이력 없음";
                 statusText.style.color = "#2d3748";
+            }
+
+            // 🚨 핵심 오더 수행: 위반이든 정상이든 비고 내용이 실재하면 무빙 치고 데이터 삽입
+            if (carNote && carNote.trim() !== "") {
+                bodyEl.classList.add("has-note"); // 상단으로 컴포넌트들을 당겨 붙이는 클래스 작동
+                noteText.innerText = carNote; // 꺽쇠포함 비고 텍스트 주입
+                noteText.style.display = "block"; // 아래 확보된 공간에 노출
             }
         });
     </script>
