@@ -419,12 +419,14 @@
                     searchCar();
                     
                     // 💡 [핵심 연동] 열려있는 popup.html 미니창으로 매칭 유무 및 주의 옵션을 정밀 분석하여 상태값 무선 송신
+                    
                     if (popupWindow && !popupWindow.closed) {
                         popupWindow.postMessage({ 
                             type: "POPUP_SEARCH", 
                             carNumber: detectedNum,
                             hasMatch: hasMatch,       // 매칭 레코드 존재 여부 (true/false)
                             isWarn: isWarnCar         // 주의 체크 여부 (true/false)
+                            carNote: car ? (car.note || "") : ""  // 👈 이 줄을 새로 추가해 줍니다!
                         }, "*");
                     }
                 }
