@@ -4,14 +4,10 @@
     <meta charset="UTF-8">
     <title>진입로 위반차량 검색 시스템 [OCR적용버전]</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; padding: 25px; background-color: #f5f7fa; position: relative; }
         h2 { color: #1a365d; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
-        
-        /* 🚔 뱃지 스타일 로고 */
         h2 i.logo-icon { color: #102a43; font-size: 1.2em; } 
-        
         .header-logo-box {
             position: absolute; top: 20px; right: 25px; display: flex; align-items: center; gap: 10px;
             background: linear-gradient(135deg, #1a365d, #2a4365); padding: 8px 15px; border-radius: 20px;
@@ -19,68 +15,44 @@
         }
         .header-logo-box i { font-size: 18px; color: #f6ad55; }
         .header-logo-box .logo-text { font-size: 13px; font-weight: bold; letter-spacing: 0.5px; }
-
         .section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .form-group { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-        
         .form-label-group { display: flex; flex-direction: column; gap: 4px; }
         .form-label-group label { font-size: 11px; font-weight: bold; color: #4a5568; padding-left: 2px; }
-
-        /* 📻 라디오 버튼 커스텀 스타일 */
         .radio-group { display: flex; gap: 12px; padding: 8px 10px; background: #edf2f7; border-radius: 4px; height: 38px; box-sizing: border-box; align-items: center; }
         .radio-label { font-size: 13px !important; font-weight: bold; color: #2d3748; cursor: pointer; display: flex; align-items: center; gap: 4px; }
         .radio-label input { margin: 0; cursor: pointer; width: auto; height: auto; padding: 0; }
-
-        /* 🏷️ 테이블 내 구분 뱃지 스타일 */
         .badge { display: inline-block; padding: 3px 8px; font-size: 12px; font-weight: bold; border-radius: 4px; }
         .badge-member { background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
         .badge-normal { background-color: #f7fafc; color: #4a5568; border: 1px solid #e2e8f0; }
-
         input, select { padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background-color: white; }
         .input-search { border: 2px solid #1a365d; font-size: 16px; width: 280px; font-weight: bold; }
         .edit-input { width: 100%; padding: 4px; font-size: 13px; border: 1px solid #3182ce; border-radius: 4px; text-align: center; }
         .edit-input-note { text-align: left; padding-left: 8px; }
-        
-        /* 테이블 안쪽 에디터 폼 정렬용 */
         .edit-datetime-container { display: flex; flex-direction: column; gap: 2px; align-items: center; }
         .edit-time-selects { display: flex; gap: 2px; width: 100%; }
         .edit-time-selects select { padding: 2px; font-size: 12px; height: 24px; flex: 1; text-align: center; }
-
         button { padding: 10px 15px; font-size: 14px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-add { background-color: #2b6cb0; color: white; height: 41px; margin-top: 15px; }
         .btn-add:hover { background-color: #2c5282; }
-        
         .btn-popup-open { background-color: #e53e3e; color: white; font-size: 15px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
         .btn-popup-open:hover { background-color: #9b2c2c; }
-
         .btn-edit { background-color: #dd6b20; color: white; padding: 5px 8px; font-size: 12px; margin-right: 2px; }
         .btn-save { background-color: #3182ce; color: white; padding: 5px 8px; font-size: 12px; margin-right: 2px; }
         .btn-cancel { background-color: #718096; color: white; padding: 5px 8px; font-size: 12px; margin-right: 2px; }
         .btn-del { background-color: #e53e3e; color: white; padding: 5px 8px; font-size: 12px; }
-        
         .btn-backup { background-color: #4a5568; color: white; margin-right: 5px; }
         .btn-backup:hover { background-color: #2d3748; }
         .btn-restore { background-color: #805ad5; color: white; }
         .file-label { display: inline-block; padding: 10px 15px; background-color: #dd6b20; color: white; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-right: 5px; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background-color: white; }
-        
         th, td { border: 1px solid #cbd5e0; padding: 8px 4px; text-align: center; font-size: 13px; word-break: break-all; vertical-align: middle; }
         th { background-color: #2d3748; color: white; font-weight: bold; }
         tr:nth-child(even) { background-color: #f7fafc; }
-        
-        /* 🚨 주의 헤더 스타일 */
         th.th-warn { background-color: #742a2a; cursor: pointer; user-select: none; position: relative; }
         th.th-warn:hover { background-color: #9b2c2c; }
         th.th-warn i { margin-left: 3px; font-size: 11px; color: #feb2b2; }
-
-        /* 줄 전체 배경색 강조 고정 */
-        .row-focus td { 
-            background-color: #fbd38d !important; 
-            color: #1a202c !important;            
-            font-weight: bold !important; 
-        }
-
+        .row-focus td { background-color: #fbd38d !important; color: #1a202c !important; font-weight: bold !important; }
         .col-warn  { width: 55px; } 
         .col-type  { width: 75px; }   
         .col-time  { width: 125px; }   
@@ -91,25 +63,14 @@
         .col-stay  { width: 90px; font-weight: bold; }
         .col-action { width: 100px; } 
         .col-note-content { text-align: left !important; padding-left: 10px; }
-
         .no-result { color: #e53e3e; font-weight: bold; margin-top: 15px; font-size: 16px; }
         .pagination-container { display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 5px; }
         .page-btn { padding: 6px 12px; background-color: white; border: 1px solid #e2e8f0; border-radius: 4px; color: #4a5568; font-weight: bold; cursor: pointer; }
         .page-btn.active { background-color: #4a5568; color: white; border-color: #4a5568; pointer-events: none; }
         .page-btn:disabled { background-color: #edf2f7; color: #a0aec0; cursor: not-allowed; }
-
-        .info-notice-box {
-            background-color: #102a43; color: #ffffff; padding: 15px 18px; border-radius: 6px; font-size: 14px; line-height: 1.7; border-left: 5px solid #ecc94b; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        /* 🚨 빨간색 점멸(애니메이션) 스타일 */
-        .warn-blink-dot {
-            display: inline-block; width: 14px; height: 14px; background-color: #e53e3e; border-radius: 50%;
-            box-shadow: 0 0 8px #e53e3e; animation: blinker 0.8s linear infinite; vertical-align: middle;
-        }
-        @keyframes blinker {
-            50% { opacity: 0; }
-        }
+        .info-notice-box { background-color: #102a43; color: #ffffff; padding: 15px 18px; border-radius: 6px; font-size: 14px; line-height: 1.7; border-left: 5px solid #ecc94b; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .warn-blink-dot { display: inline-block; width: 14px; height: 14px; background-color: #e53e3e; border-radius: 50%; box-shadow: 0 0 8px #e53e3e; animation: blinker 0.8s linear infinite; vertical-align: middle; }
+        @keyframes blinker { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
@@ -360,7 +321,6 @@
             renderTablePage();
         }
 
-        // 🚨 팝업창 연동 및 수신부 제어 로직 (수정 완료)
         window.addEventListener("message", function(event) {
             if (event.data && event.data.type === "POPUP_SEARCH") {
                 const targetNum = event.data.carNumber;
@@ -385,7 +345,6 @@
             }
         });
 
-        // 🚨 파이썬 자동 스캐너 백그라운드 OCR 무선 데이터 수신 안테나 (수정 완료)
         function connectOCRWebSocket() {
             const socket = new WebSocket("ws://localhost:8080");
             
@@ -394,10 +353,8 @@
                 if (data.type === "AUTO_DETECT") {
                     const detectedNum = data.carNumber;
                     
-                    // 메인 검색창에 자동 주입
                     document.getElementById("searchInput").value = detectedNum;
                     
-                    // 해당 차량 서치 및 매칭 이력 필터링
                     const foundItem = carData.find(item => {
                         if (!item.number) return false;
                         return item.number.replace(/[^0-9]/g, "").slice(-4) === detectedNum || item.number.slice(-4) === detectedNum;
@@ -418,27 +375,22 @@
                     
                     searchCar();
                     
-                    // 💡 [핵심 연동] 열려있는 popup.html 미니창으로 매칭 유무 및 주의 옵션을 정밀 분석하여 상태값 무선 송신
-                    
                     if (popupWindow && !popupWindow.closed) {
                         popupWindow.postMessage({ 
                             type: "POPUP_SEARCH", 
                             carNumber: detectedNum,
-                            hasMatch: hasMatch,       // 매칭 레코드 존재 여부 (true/false)
-                            isWarn: isWarnCar         // 주의 체크 여부 (true/false)
-                            carNote: car ? (car.note || "") : ""  // 👈 이 줄을 새로 추가해 줍니다!
+                            hasMatch: hasMatch,
+                            isWarn: isWarnCar
                         }, "*");
                     }
                 }
             };
             
             socket.onclose = function() {
-                // 파이썬 프로그램 리스타트 시 자동 재연동 안전 장치
                 setTimeout(connectOCRWebSocket, 3000);
             };
         }
         
-        // 브라우저 켜질 때 웹소켓 안테나 동시 기동
         document.addEventListener("DOMContentLoaded", () => {
             connectOCRWebSocket();
         });
@@ -535,7 +487,6 @@
 
         initDateTimePickers(); searchCar();
 
-        // 방향키 포커스 이동 로직
         setTimeout(() => {
             const moveInputs = [document.getElementById("addCar"), document.getElementById("addDong"), document.getElementById("addHo"), document.getElementById("addNote")];
             moveInputs.forEach((input, index) => {
