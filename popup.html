@@ -88,31 +88,31 @@
             animation: blinkRed 0.8s linear infinite;
         }
 
-        /* 일반 위반 차량 애니메이션 */
-        @keyframes blinkGreen {
-            0% { opacity: 1; color: #38a169; }
-            50% { opacity: 0.1; color: #38a169; }
-            100% { opacity: 1; color: #38a169; }
+        /* 관심(과거 위반) 차량 애니메이션 */
+        @keyframes blinkOrange {
+            0% { opacity: 1; color: #dd6b20; }
+            50% { opacity: 0.1; color: #dd6b20; }
+            100% { opacity: 1; color: #dd6b20; }
         }
         .status-match {
-            animation: blinkGreen 0.8s linear infinite;
+            animation: blinkOrange 0.8s linear infinite;
         }
 
         /* 📌 하단 상태 안내 문구 (무조건 한 줄 유지 전용 세팅) */
         .status-text {
             margin-top: 20px;
-            font-size: 13.5px; /* 폰트 크기를 살짝 줄여 안정성 확보 */
+            font-size: 13.5px;
             font-weight: 800;
             color: #4a5568;
-            letter-spacing: -0.3px; /* 자간을 좁혀 글자가 뚱뚱해지지 않게 압축 */
+            letter-spacing: -0.4px; /* 자간 압축으로 시인성 극대화 */
             text-align: center;
             transition: all 0.4s ease-in-out;
             
             width: 100%;
             max-width: 220px;
-            white-space: nowrap; /* 🚨 핵심 오더: 무슨 일이 있어도 두 줄로 줄바꿈 금지 */
-            overflow: hidden;    /* 영역을 넘어가면 가려줌 */
-            text-overflow: clip; /* 글자가 밀리더라도 형태 유지 */
+            white-space: nowrap; /* 무조건 한 줄 유지 오더 반영 */
+            overflow: hidden;
+            text-overflow: clip;
         }
         
         body.has-note .status-text {
@@ -184,23 +184,26 @@
 
             inputEl.value = num;
 
-            // 데이터 분석 및 상태 제어
+            // 데이터 분석 및 상태 제어 오더 반영
             if (hasMatch === true || hasMatch === "true") {
                 if (isWarn === true || isWarn === "true") {
+                    // 🚨 주의 대상 (상습 위반)
                     inputEl.classList.add("status-warn");
                     imgLeft.src = "100-3.gif";
                     statusText.innerText = "🚨 위험: 상습 위반 차량 진입!";
                     statusText.style.color = "#e53e3e";
                 } else {
+                    // 💡 관심 대상 (기존 안내 ➔ 관심으로 용어 변경 및 아이콘 최적화)
                     inputEl.classList.add("status-match");
                     imgLeft.src = "100.png";
-                    statusText.innerText = "🟢 안내: 과거 위반 이력 차량";
-                    statusText.style.color = "#38a169";
+                    statusText.innerText = "💡 관심: 과거 위반 이력 차량";
+                    statusText.style.color = "#dd6b20"; // 오렌지/브라운 계열로 관심 유도
                 }
             } else {
+                // ✅ 정상 대상 (아이콘 변경 및 텍스트 맞춤 변경)
                 imgLeft.src = "100.png";
-                statusText.innerText = "❌ 정상: 위반 이력 없음";
-                statusText.style.color = "#2d3748";
+                statusText.innerText = "✅ 정상: 특이사항 없어영";
+                statusText.style.color = "#2b6cb0"; // 신뢰감 있는 블루 톤
             }
 
             // 비고 내용 실재하면 무빙 치고 데이터 삽입
