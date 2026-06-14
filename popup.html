@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>모니터링</title>
     <style>
-        /* 기본 상태는 화면 정중앙 배치 */
         body {
             margin: 0;
             padding: 20px;
@@ -21,13 +20,11 @@
             transition: all 0.4s ease-in-out;
         }
 
-        /* 비고 데이터가 들어왔을 때 몸통(Body)을 상단 정렬로 틀어 공간 확보 */
         body.has-note {
             justify-content: flex-start;
             padding-top: 15px;
         }
 
-        /* 경광등 컨테이너 */
         .siren-container {
             display: flex;
             justify-content: center;
@@ -37,7 +34,6 @@
             transition: all 0.4s ease-in-out;
         }
 
-        /* 비고 확보 시 경광등의 아래 마진을 줄여 상단 밀착 가속 */
         body.has-note .siren-container {
             margin-bottom: 10px;
         }
@@ -49,7 +45,6 @@
             border-radius: 6px;
         }
 
-        /* 차량번호 표시창 영역 */
         .display-box {
             width: 100%;
             max-width: 210px;
@@ -62,7 +57,6 @@
             transition: all 0.4s ease-in-out;
         }
 
-        /* 번호판 내부 텍스트 스타일 */
         .car-number-input {
             width: 95%;
             border: none;
@@ -78,7 +72,6 @@
             font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
         }
 
-        /* 상습 위반 차량 애니메이션 */
         @keyframes blinkRed {
             0% { opacity: 1; color: #e53e3e; }
             50% { opacity: 0.1; color: #e53e3e; }
@@ -88,7 +81,6 @@
             animation: blinkRed 0.8s linear infinite;
         }
 
-        /* 관심(과거 위반) 차량 애니메이션 */
         @keyframes blinkOrange {
             0% { opacity: 1; color: #dd6b20; }
             50% { opacity: 0.1; color: #dd6b20; }
@@ -98,19 +90,17 @@
             animation: blinkOrange 0.8s linear infinite;
         }
 
-        /* 📌 하단 상태 안내 문구 (무조건 한 줄 유지 전용 세팅) */
         .status-text {
             margin-top: 20px;
             font-size: 13.5px;
             font-weight: 800;
             color: #4a5568;
-            letter-spacing: -0.4px; /* 자간 압축으로 시인성 극대화 */
+            letter-spacing: -0.4px;
             text-align: center;
             transition: all 0.4s ease-in-out;
-            
             width: 100%;
             max-width: 220px;
-            white-space: nowrap; /* 무조건 한 줄 유지 오더 반영 */
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
         }
@@ -119,12 +109,12 @@
             margin-top: 10px;
         }
 
-        /* 확보된 하단 공간에 표출될 비고(Note) 전용 스타일 */
+        /* 📝 핵심 키워드 리스트 박스 디자인 */
         .note-text {
             margin-top: 12px;
             font-size: 13px;
             font-weight: bold;
-            color: #2d3748;
+            color: #c53030; /* 강조를 위해 붉은 계열 색상 차용 */
             background-color: #fffaf0;
             padding: 8px 12px;
             border-radius: 8px;
@@ -135,6 +125,7 @@
             text-align: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             display: none;
+            line-height: 1.5; /* 여러 줄 표시용 행간 배려 */
         }
     </style>
 </head>
@@ -165,14 +156,14 @@
             const num = event.data.carNumber;
             const hasMatch = event.data.hasMatch;
             const isWarn = event.data.isWarn;
-            const carNote = event.data.carNote; 
+            const carNotesArray = event.data.carNotesArray || []; // 배열 데이터 수신
             
-            // 초기화
+            // 리셋 초기화
             inputEl.className = "car-number-input"; 
             inputEl.style.color = "#1a202c";
             bodyEl.classList.remove("has-note");
             noteText.style.display = "none";
-            noteText.innerText = "";
+            noteText.innerHTML = ""; // 여러 줄 표시용 HTML 초기화
 
             if (!num || num.toString().trim() === "") {
                 inputEl.value = "";
@@ -184,33 +175,48 @@
 
             inputEl.value = num;
 
-            // 데이터 분석 및 상태 제어 오더 반영
+            // 상태값에 따른 시인성 제어
             if (hasMatch === true || hasMatch === "true") {
                 if (isWarn === true || isWarn === "true") {
-                    // 🚨 주의 대상 (상습 위반)
                     inputEl.classList.add("status-warn");
                     imgLeft.src = "100-3.gif";
                     statusText.innerText = "🚨 위험: 상습 위반 차량 진입!";
                     statusText.style.color = "#e53e3e";
                 } else {
-                    // 💡 관심 대상 (기존 안내 ➔ 관심으로 용어 변경 및 아이콘 최적화)
                     inputEl.classList.add("status-match");
                     imgLeft.src = "100.png";
                     statusText.innerText = "💡 관심: 과거 위반 이력 차량";
-                    statusText.style.color = "#dd6b20"; // 오렌지/브라운 계열로 관심 유도
+                    statusText.style.color = "#dd6b20";
                 }
             } else {
-                // ✅ 정상 대상 (아이콘 변경 및 텍스트 맞춤 변경)
                 imgLeft.src = "100.png";
                 statusText.innerText = "✅ 정상: 특이사항 없어영";
-                statusText.style.color = "#2b6cb0"; // 신뢰감 있는 블루 톤
+                statusText.style.color = "#2b6cb0";
             }
 
-            // 비고 내용 실재하면 무빙 치고 데이터 삽입
-            if (carNote && carNote.trim() !== "") {
-                bodyEl.classList.add("has-note"); 
-                noteText.innerText = carNote; 
-                noteText.style.display = "block"; 
+            // 🎯 오더 반영: 꺽쇠([]) 패턴 안의 핵심 단어만 추출 수집하는 매커니즘
+            let combinedKeywords = [];
+            
+            carNotesArray.forEach(note => {
+                if (!note) return;
+                // 정규식 활용하여 문자열 내 모든 [내용] 패턴 검색 추출
+                const matches = note.match(/\[[^\]]+\]/g);
+                if (matches) {
+                    matches.forEach(k => {
+                        if(!combinedKeywords.includes(k)) { // 중복 단어 방지
+                            combinedKeywords.push(k);
+                        }
+                    });
+                }
+            });
+
+            // 추출 완료된 꺽쇠 키워드가 존재한다면 하단 영역 정렬 및 다중 노출 처리
+            if (combinedKeywords.length > 0) {
+                bodyEl.classList.add("has-note");
+                
+                // 검색 기록이 3개 이상이어도 줄바꿈으로 깔끔하게 결합하여 표출
+                noteText.innerHTML = combinedKeywords.join("<br>"); 
+                noteText.style.display = "block";
             }
         });
     </script>
