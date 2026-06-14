@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <title>모니터링</title>
     <style>
-        /* 팝업창 전체를 부드럽고 굵은 누구나 읽기 쉬운 폰트로 지정 */
         body {
             margin: 0;
             padding: 20px;
-            background-color: #ffffff; /* 팝업창 전체 배경 흰색 */
+            background-color: #ffffff;
             color: #2d3748;
             font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
             display: flex;
@@ -19,8 +18,6 @@
             box-sizing: border-box;
             overflow: hidden;
         }
-
-        /* 🚨 경광등 컨테이너 (이전 크기로 원복) */
         .siren-container {
             display: flex;
             justify-content: center;
@@ -28,34 +25,29 @@
             width: 100%;
             margin-bottom: 20px;
         }
-
         .siren-img {
             width: 75px;
             height: 75px;
             object-fit: contain;
             border-radius: 6px;
         }
-
-        /* 📟 차량번호 표시창 영역 (이전 크기 원복 + 흰색 배경) */
         .display-box {
             width: 100%;
             max-width: 210px;
-            background-color: #ffffff; /* 입력창 배경 흰색 */
-            border: 4px solid #cbd5e0; /* 깔끔하고 선명한 테두리 */
+            background-color: #ffffff;
+            border: 4px solid #cbd5e0;
             border-radius: 12px;
             padding: 16px 0;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.06);
         }
-
-        /* 🔤 번호판 내부 텍스트 스타일 (크고 두껍게 하여 시인성 극대화) */
         .car-number-input {
             width: 95%;
             border: none;
             background: transparent;
             text-align: center;
-            font-size: 36px; /* 멀리서도 잘 보이도록 폰트 크기 업 */
-            font-weight: 900; /* 가장 두꺼운 굵기 */
+            font-size: 36px;
+            font-weight: 900;
             letter-spacing: 2px;
             color: #1a202c;
             outline: none;
@@ -63,8 +55,6 @@
             margin: 0;
             font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
         }
-
-        /* 🚨 [주의 O] 상습 위반 차량: 빨간색 굵게 깜빡임 애니메이션 */
         @keyframes blinkRed {
             0% { opacity: 1; color: #e53e3e; }
             50% { opacity: 0.1; color: #e53e3e; }
@@ -73,8 +63,6 @@
         .status-warn {
             animation: blinkRed 0.8s linear infinite;
         }
-
-        /* 🟢 [주의 X] 일반 위반 차량: 녹색 굵게 깜빡임 애니메이션 */
         @keyframes blinkGreen {
             0% { opacity: 1; color: #38a169; }
             50% { opacity: 0.1; color: #38a169; }
@@ -83,31 +71,13 @@
         .status-match {
             animation: blinkGreen 0.8s linear infinite;
         }
-
-        /* ℹ️ 하단 상태 안내 문구 (폰트 크기 확대 및 부드럽고 굵은 스타일) */
         .status-text {
             margin-top: 20px;
-            font-size: 15px; /* 글자 크기 대폭 키움 */
-            font-weight: 800; /* 굵고 명확하게 수정 */
+            font-size: 15px;
+            font-weight: 800;
             color: #4a5568;
             letter-spacing: 0.5px;
             text-align: center;
-        }
-
-        /* 📝 실시간 비고(Note) 표시 영역 (새로 추가됨) */
-        .note-text {
-            margin-top: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            color: #4a5568;
-            background-color: #f7fafc;
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: 1px dashed #e2e8f0;
-            max-width: 240px;
-            word-break: break-all;
-            text-align: center;
-            display: none; /* 기본 상태는 숨김 */
         }
     </style>
 </head>
@@ -122,31 +92,22 @@
     </div>
 
     <div id="statusText" class="status-text">차량 진입 대기 중</div>
-    
-    <div id="noteText" class="note-text"></div>
 
     <script>
-        // 📡 메인창(index.html) 무선 신호 연동 수신 안테나
         window.addEventListener("message", function(event) {
             if (!event.data || event.data.type !== "POPUP_SEARCH") return;
 
             const inputEl = document.getElementById("popupInput");
             const imgLeft = document.getElementById("sirenLeft");
             const statusText = document.getElementById("statusText");
-            const noteText = document.getElementById("noteText"); // 👈 비고 엘리먼트 확보
             
             const num = event.data.carNumber;
             const hasMatch = event.data.hasMatch;
             const isWarn = event.data.isWarn;
-            const carNote = event.data.carNote; // 👈 메인창이 던져준 비고 내용 받기
             
-            // 1. 스타일 및 텍스트 초기화
             inputEl.className = "car-number-input"; 
             inputEl.style.color = "#1a202c";
-            noteText.style.display = "none"; // 비고창 초기화(숨김)
-            noteText.innerText = "";
 
-            // 차량 번호가 없거나 빈 값일 때 대기 상태 안전 회귀
             if (!num || num.toString().trim() === "") {
                 inputEl.value = "";
                 imgLeft.src = "100.png";
@@ -157,40 +118,22 @@
 
             inputEl.value = num;
 
-            // 2. 스캔 차량 데이터 성격 분석 후 시인성 제어
             if (hasMatch === true || hasMatch === "true") {
-                
                 if (isWarn === true || isWarn === "true") {
-                    // 🚨 Case A: [주의] 상습 위반 차량 -> 빨간색 글자 깜빡임 + 움짤 교체
                     inputEl.classList.add("status-warn");
                     imgLeft.src = "100-3.gif";
                     statusText.innerText = "🚨 위험: 상습 위반 차량 진입!";
                     statusText.style.color = "#e53e3e";
                 } else {
-                    // 🟢 Case B: [일반] 과거 위반 차량 -> 녹색 글자 깜빡임 + 기본 이미지 고정
                     inputEl.classList.add("status-match");
                     imgLeft.src = "100.png";
                     statusText.innerText = "🟢 안내: 과거 위반 이력 차량";
                     statusText.style.color = "#38a169";
                 }
-                
-                // 📝 위반 차량일 때 비고(Note) 내용이 있다면 꺽쇠 포함해서 하단에 노출
-                if (carNote && carNote.trim() !== "") {
-                    noteText.innerText = carNote;
-                    noteText.style.display = "block"; // 조용히 켜지기
-                }
-                
             } else {
-                // ⚪ Case C: 깨끗한 정상 차량 -> 검은색 글자 유지 + 기본 이미지 고정
                 imgLeft.src = "100.png";
                 statusText.innerText = "❌ 정상: 위반 이력 없음";
                 statusText.style.color = "#2d3748";
-                
-                // 정상 차량이라도 개별 비고가 혹시 적혀있다면 출력해 줍니다.
-                if (carNote && carNote.trim() !== "") {
-                    noteText.innerText = carNote;
-                    noteText.style.display = "block";
-                }
             }
         });
     </script>
