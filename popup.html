@@ -93,6 +93,22 @@
             letter-spacing: 0.5px;
             text-align: center;
         }
+
+        /* 📝 실시간 비고(Note) 표시 영역 (새로 추가됨) */
+        .note-text {
+            margin-top: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #4a5568;
+            background-color: #f7fafc;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px dashed #e2e8f0;
+            max-width: 240px;
+            word-break: break-all;
+            text-align: center;
+            display: none; /* 기본 상태는 숨김 */
+        }
     </style>
 </head>
 <body>
@@ -106,27 +122,31 @@
     </div>
 
     <div id="statusText" class="status-text">차량 진입 대기 중</div>
+    
+    <div id="noteText" class="note-text"></div>
 
     <script>
         // 📡 메인창(index.html) 무선 신호 연동 수신 안테나
         window.addEventListener("message", function(event) {
-            // 1. 신호가 비어있거나 타입이 다르면 즉시 차단
             if (!event.data || event.data.type !== "POPUP_SEARCH") return;
 
             const inputEl = document.getElementById("popupInput");
             const imgLeft = document.getElementById("sirenLeft");
             const statusText = document.getElementById("statusText");
+            const noteText = document.getElementById("noteText"); // 👈 비고 엘리먼트 확보
             
-            // 2. 메인창에서 보낸 데이터 안전하게 추출
             const num = event.data.carNumber;
             const hasMatch = event.data.hasMatch;
             const isWarn = event.data.isWarn;
+            const carNote = event.data.carNote; // 👈 메인창이 던져준 비고 내용 받기
             
-            // 3. 스타일 및 텍스트 초기화
+            // 1. 스타일 및 텍스트 초기화
             inputEl.className = "car-number-input"; 
             inputEl.style.color = "#1a202c";
+            noteText.style.display = "none"; // 비고창 초기화(숨김)
+            noteText.innerText = "";
 
-            // 차량 번호가 아예 없거나 빈 값일 때 대기 상태 안전 회귀
+            // 차량 번호가 없거나 빈 값일 때 대기 상태 안전 회귀
             if (!num || num.toString().trim() === "") {
                 inputEl.value = "";
                 imgLeft.src = "100.png";
@@ -135,10 +155,9 @@
                 return;
             }
 
-            // 실시간으로 전달받은 차량 번호 화면 입력창에 주입!
             inputEl.value = num;
 
-            // 4. 스캔 차량 데이터 성격 분석 후 시인성 제어
+            // 2. 스캔 차량 데이터 성격 분석 후 시인성 제어
             if (hasMatch === true || hasMatch === "true") {
                 
                 if (isWarn === true || isWarn === "true") {
@@ -155,11 +174,23 @@
                     statusText.style.color = "#38a169";
                 }
                 
+                // 📝 위반 차량일 때 비고(Note) 내용이 있다면 꺽쇠 포함해서 하단에 노출
+                if (carNote && carNote.trim() !== "") {
+                    noteText.innerText = carNote;
+                    noteText.style.display = "block"; // 조용히 켜지기
+                }
+                
             } else {
                 // ⚪ Case C: 깨끗한 정상 차량 -> 검은색 글자 유지 + 기본 이미지 고정
                 imgLeft.src = "100.png";
                 statusText.innerText = "❌ 정상: 위반 이력 없음";
                 statusText.style.color = "#2d3748";
+                
+                // 정상 차량이라도 개별 비고가 혹시 적혀있다면 출력해 줍니다.
+                if (carNote && carNote.trim() !== "") {
+                    noteText.innerText = carNote;
+                    noteText.style.display = "block";
+                }
             }
         });
     </script>
