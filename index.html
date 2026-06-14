@@ -319,6 +319,21 @@
             const maxPage = Math.ceil(currentFilteredData.length / itemsPerPage) || 1;
             if (currentPage > maxPage) currentPage = maxPage;
             renderTablePage();
+            
+            // 수동 검색 시에도 오픈되어 있는 팝업창으로 연동 동기화 살포
+            if (popupWindow && !popupWindow.closed && input.length === 4) {
+                const foundCar = carData.find(item => {
+                    if (!item.number) return false;
+                    return item.number.replace(/[^0-9]/g, "").slice(-4) === input || item.number.slice(-4) === input;
+                });
+                popupWindow.postMessage({
+                    type: "POPUP_SEARCH",
+                    carNumber: input,
+                    hasMatch: foundCar ? true : false,
+                    isWarn: foundCar && foundCar.isWarn ? true : false,
+                    carNote: foundCar ? (foundCar.note || "") : ""
+                }, "*");
+            }
         }
 
         window.addEventListener("message", function(event) {
@@ -362,10 +377,12 @@
                     
                     let hasMatch = false;
                     let isWarnCar = false;
+                    let currentNote = "";
                     
                     if (foundItem) {
                         hasMatch = true;
                         isWarnCar = foundItem.isWarn ? true : false;
+                        currentNote = foundItem.note || "";
                         focusedRecordId = parseInt(foundItem.id);
                         const gIdx = carData.findIndex(item => parseInt(item.id) === focusedRecordId);
                         if (gIdx > -1) currentPage = Math.floor(gIdx / itemsPerPage) + 1;
@@ -380,7 +397,8 @@
                             type: "POPUP_SEARCH", 
                             carNumber: detectedNum,
                             hasMatch: hasMatch,
-                            isWarn: isWarnCar
+                            isWarn: isWarnCar,
+                            carNote: currentNote
                         }, "*");
                     }
                 }
