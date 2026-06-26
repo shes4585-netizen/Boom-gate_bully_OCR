@@ -199,7 +199,7 @@
         let popupWindow = null;     
         let isWarnSortActive = false;
 
-        // 💡 10초 뒤 자동 리셋을 제어하기 위한 타이머 보관함
+        // 💡 10초 카운트다운용 제어 바구니
         let autoClearTimer = null;
 
         function initDateTimePickers() {
@@ -253,12 +253,13 @@
             popupWindow = window.open("popup.html", "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
         }
 
-        // 💡 메인창과 팝업창을 동시에 깨끗하게 초기화하는 일꾼 함수
+        // 💡 10초 후 인덱스 창과 팝업창을 태초의 대기 상태로 되돌리는 함수
         function clearSearchAndPopup() {
             document.getElementById("searchInput").value = "";
             focusedRecordId = null;
-            searchCar(); 
+            searchCar(); // 인덱스 창 표 복원
 
+            // 팝업창에 리셋 신호 안전하게 전송
             if (popupWindow && !popupWindow.closed) {
                 popupWindow.postMessage({
                     type: "POPUP_SEARCH",
@@ -321,10 +322,12 @@
             setupPagination(currentFilteredData.length);
         }
 
+        // 💡 핵심 브레인: 번호를 가공하고 매칭하여 데이터베이스 조회 및 팝업창 전송을 전담
         function searchCar() {
             const input = document.getElementById("searchInput").value.trim();
             const noResult = document.getElementById("noResult"); const tbody = document.getElementById("tableBody");
             sortMainData();
+            
             if (input === "") {
                 currentFilteredData = [...carData]; noResult.style.display = "none"; focusedRecordId = null; 
             } else {
@@ -334,12 +337,14 @@
                     return lastFour === input || item.number.slice(-4) === input;
                 });
                 if (currentFilteredData.length > 0) { noResult.style.display = "none"; } 
-                else { tbody.innerHTML = ""; document.getElementById("pagination").innerHTML = ""; noResult.style.display = "block"; return; }
+                else { tbody.innerHTML = ""; document.getElementById("pagination").innerHTML = ""; noResult.style.display = "block"; }
             }
+            
             const maxPage = Math.ceil(currentFilteredData.length / itemsPerPage) || 1;
             if (currentPage > maxPage) currentPage = maxPage;
             renderTablePage();
             
+            // 💡 팝업창으로 실시간 강제 데이터 미트 토스 로직 (4자리 감지 시 무조건 구동)
             if (popupWindow && !popupWindow.closed && input.length === 4) {
                 const matchedRecords = carData.filter(item => {
                     if (!item.number) return false;
@@ -350,6 +355,7 @@
                 const isWarn = matchedRecords.some(item => item.isWarn); 
                 const notesArray = matchedRecords.map(item => item.note || "");
 
+                // 팝업창 내부로 4자리 숫자 및 위반사항 일체 살포
                 popupWindow.postMessage({
                     type: "POPUP_SEARCH",
                     carNumber: input,
@@ -360,18 +366,19 @@
             }
         }
 
-        // 💡 수동 검색 연동 및 타이머 리셋 제어기
+        // 💡 수동 입력창 이벤트 수신 및 무한 루프 락 해제 제어기
         window.addEventListener("message", function(event) {
-            if (event.data && event.data.type === "POPUP_SEARCH") {
+            // 외부(팝업창 내부의 인풋 등)에서 넘어온 순수 조회 신호일 때만 가동
+            if (event.data && event.data.type === "POPUP_SEARCH" && event.data.carNumber !== "") {
                 const targetNum = event.data.carNumber;
-                document.getElementById("searchInput").value = targetNum;
-                sortMainData();
                 
-                // 💡 수동 신호가 새로 오면 돌고 있던 예전 카운트다운을 원천 파괴함
+                // 루프 버그 방지 조건문 추가
+                if (document.getElementById("searchInput").value === targetNum) return;
+                
+                document.getElementById("searchInput").value = targetNum;
+                
                 if (autoClearTimer) clearTimeout(autoClearTimer);
 
-                if (targetNum === "") { focusedRecordId = null; searchCar(); return; }
-                
                 const matchedRecords = carData.filter(item => {
                     if (!item.number) return false;
                     return item.number.replace(/[^0-9]/g, "").slice(-4) === targetNum || item.number.slice(-4) === targetNum;
@@ -381,18 +388,16 @@
                     focusedRecordId = parseInt(matchedRecords[0].id);
                     const globalIndex = carData.findIndex(item => parseInt(item.id) === focusedRecordId);
                     if (globalIndex > -1) currentPage = Math.floor(globalIndex / itemsPerPage) + 1;
-                    searchCar();
                 } else { 
                     focusedRecordId = null; 
-                    searchCar(); 
                 }
-
-                // 💡 입력 직후 정확히 10초 뒤에 화면 폭파(클리어) 예약
+                
+                searchCar();
                 autoClearTimer = setTimeout(clearSearchAndPopup, 10000);
             }
         });
 
-        // 💡 파이썬 스캐너(웹소켓) 실시간 무선 감지 제어기
+        // 💡 파이썬 안테나 또는 테스트베드 안테나 수신 모듈
         function connectOCRWebSocket() {
             const socket = new WebSocket("ws://localhost:8080");
             
@@ -400,9 +405,10 @@
                 const data = JSON.parse(event.data);
                 if (data.type === "AUTO_DETECT") {
                     const detectedNum = data.carNumber;
+                    
+                    // 인덱스 창 검색창에 인식 번호 바인딩
                     document.getElementById("searchInput").value = detectedNum;
                     
-                    // 💡 연속으로 차량 진입 시 타이머가 겹치지 않게 기존 예약을 취소시킴
                     if (autoClearTimer) clearTimeout(autoClearTimer);
 
                     const matchedRecords = carData.filter(item => {
@@ -410,14 +416,7 @@
                         return item.number.replace(/[^0-9]/g, "").slice(-4) === detectedNum || item.number.slice(-4) === detectedNum;
                     });
                     
-                    let hasMatch = false;
-                    let isWarnCar = false;
-                    let notesArray = [];
-                    
                     if (matchedRecords.length > 0) {
-                        hasMatch = true;
-                        isWarnCar = matchedRecords.some(item => item.isWarn);
-                        notesArray = matchedRecords.map(item => item.note || "");
                         focusedRecordId = parseInt(matchedRecords[0].id);
                         const gIdx = carData.findIndex(item => parseInt(item.id) === focusedRecordId);
                         if (gIdx > -1) currentPage = Math.floor(gIdx / itemsPerPage) + 1;
@@ -425,19 +424,10 @@
                         focusedRecordId = null;
                     }
                     
+                    // 💡 번호 수집 즉시 조회를 때려서 내부 postMessage가 가동되도록 유도
                     searchCar();
                     
-                    if (popupWindow && !popupWindow.closed) {
-                        popupWindow.postMessage({ 
-                            type: "POPUP_SEARCH", 
-                            carNumber: detectedNum,
-                            hasMatch: hasMatch,
-                            isWarn: isWarnCar,
-                            carNotesArray: notesArray
-                        }, "*");
-                    }
-
-                    // 💡 10초(10000밀리초) 동안 강렬하게 표출한 뒤 자동 리셋 구동!
+                    // 💡 상시 표출 타이머 10초 세팅 작동
                     autoClearTimer = setTimeout(clearSearchAndPopup, 10000);
                 }
             };
