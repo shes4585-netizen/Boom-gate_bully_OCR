@@ -54,12 +54,12 @@
         th.th-warn i { margin-left: 3px; font-size: 11px; color: #feb2b2; }
         .row-focus td { background-color: #fbd38d !important; color: #1a202c !important; font-weight: bold !important; }
         .col-warn  { width: 55px; } 
-        .col-type  { width: 75px; }   
-        .col-time  { width: 125px; }   
+        .col-type  { width: 75px; }    
+        .col-time  { width: 125px; }    
         .col-time-edit { width: 155px; }
         .col-car   { width: 110px; }  
-        .col-dong  { width: 55px; }   
-        .col-ho     { width: 55px; }   
+        .col-dong  { width: 55px; }    
+        .col-ho     { width: 55px; }    
         .col-stay  { width: 90px; font-weight: bold; }
         .col-action { width: 100px; } 
         .col-note-content { text-align: left !important; padding-left: 10px; }
@@ -199,6 +199,9 @@
         let popupWindow = null;     
         let isWarnSortActive = false;
 
+        // 💡 10초 뒤 자동 리셋을 제어하기 위한 타이머 보관함
+        let autoClearTimer = null;
+
         function initDateTimePickers() {
             const hourSelect = document.getElementById("addInHour");
             const minSelect = document.getElementById("addInMin");
@@ -248,6 +251,23 @@
             const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
             const topPosition = (window.screen.height / 2) - (popupHeight / 2);
             popupWindow = window.open("popup.html", "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
+        }
+
+        // 💡 메인창과 팝업창을 동시에 깨끗하게 초기화하는 일꾼 함수
+        function clearSearchAndPopup() {
+            document.getElementById("searchInput").value = "";
+            focusedRecordId = null;
+            searchCar(); 
+
+            if (popupWindow && !popupWindow.closed) {
+                popupWindow.postMessage({
+                    type: "POPUP_SEARCH",
+                    carNumber: "",
+                    hasMatch: false,
+                    isWarn: false,
+                    carNotesArray: []
+                }, "*");
+            }
         }
 
         function setupPagination(totalItems) {
@@ -321,16 +341,13 @@
             renderTablePage();
             
             if (popupWindow && !popupWindow.closed && input.length === 4) {
-                // 💡 핵심 수정: 동일 차량의 매칭된 모든 레코드를 수집
                 const matchedRecords = carData.filter(item => {
                     if (!item.number) return false;
                     return item.number.replace(/[^0-9]/g, "").slice(-4) === input || item.number.slice(-4) === input;
                 });
 
                 const hasMatch = matchedRecords.length > 0;
-                const isWarn = matchedRecords.some(item => item.isWarn); // 하나라도 주의차량이면 켜짐
-                
-                // 모든 매칭 레코드의 비고 내용을 배열로 모아서 전송
+                const isWarn = matchedRecords.some(item => item.isWarn); 
                 const notesArray = matchedRecords.map(item => item.note || "");
 
                 popupWindow.postMessage({
@@ -338,16 +355,21 @@
                     carNumber: input,
                     hasMatch: hasMatch,
                     isWarn: isWarn,
-                    carNotesArray: notesArray // 배열 데이터로 전송 구조 개편
+                    carNotesArray: notesArray 
                 }, "*");
             }
         }
 
+        // 💡 수동 검색 연동 및 타이머 리셋 제어기
         window.addEventListener("message", function(event) {
             if (event.data && event.data.type === "POPUP_SEARCH") {
                 const targetNum = event.data.carNumber;
                 document.getElementById("searchInput").value = targetNum;
                 sortMainData();
+                
+                // 💡 수동 신호가 새로 오면 돌고 있던 예전 카운트다운을 원천 파괴함
+                if (autoClearTimer) clearTimeout(autoClearTimer);
+
                 if (targetNum === "") { focusedRecordId = null; searchCar(); return; }
                 
                 const matchedRecords = carData.filter(item => {
@@ -364,9 +386,13 @@
                     focusedRecordId = null; 
                     searchCar(); 
                 }
+
+                // 💡 입력 직후 정확히 10초 뒤에 화면 폭파(클리어) 예약
+                autoClearTimer = setTimeout(clearSearchAndPopup, 10000);
             }
         });
 
+        // 💡 파이썬 스캐너(웹소켓) 실시간 무선 감지 제어기
         function connectOCRWebSocket() {
             const socket = new WebSocket("ws://localhost:8080");
             
@@ -376,6 +402,9 @@
                     const detectedNum = data.carNumber;
                     document.getElementById("searchInput").value = detectedNum;
                     
+                    // 💡 연속으로 차량 진입 시 타이머가 겹치지 않게 기존 예약을 취소시킴
+                    if (autoClearTimer) clearTimeout(autoClearTimer);
+
                     const matchedRecords = carData.filter(item => {
                         if (!item.number) return false;
                         return item.number.replace(/[^0-9]/g, "").slice(-4) === detectedNum || item.number.slice(-4) === detectedNum;
@@ -407,6 +436,9 @@
                             carNotesArray: notesArray
                         }, "*");
                     }
+
+                    // 💡 10초(10000밀리초) 동안 강렬하게 표출한 뒤 자동 리셋 구동!
+                    autoClearTimer = setTimeout(clearSearchAndPopup, 10000);
                 }
             };
             
