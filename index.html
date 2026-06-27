@@ -393,7 +393,7 @@
                 }
                 
                 searchCar();
-                autoClearTimer = setTimeout(clearSearchAndPopup, 20000);
+                autoClearTimer = setTimeout(clearSearchAndPopup, 15000);
             }
         });
 
@@ -427,8 +427,8 @@
                     // 💡 번호 수집 즉시 조회를 때려서 내부 postMessage가 가동되도록 유도
                     searchCar();
                     
-                    // 💡 상시 표출 타이머 20초 세팅 작동
-                    autoClearTimer = setTimeout(clearSearchAndPopup, 20000);
+                    // 💡 상시 표출 타이머 15초 세팅 작동
+                    autoClearTimer = setTimeout(clearSearchAndPopup, 15000);
                 }
             };
             
