@@ -246,12 +246,15 @@
             searchCar();
         }
 
-        function openSearchPopup() {
-            const popupWidth = 230; const popupHeight = 380;
-            const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
-            const topPosition = (window.screen.height / 2) - (popupHeight / 2);
-            popupWindow = window.open("popup.html", "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
-        }
+        // 💡 기존 코드 (약 170번째 줄 부근)
+    function openSearchPopup() {
+    const popupWidth = 230; const popupHeight = 380;
+    const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
+    const topPosition = (window.screen.height / 2) - (popupHeight / 2);
+    
+    // ❌ 기존: "popup.html" -> ⭕ 변경: "./popup.html" (앞에 점과 슬래시 추가)
+    popupWindow = window.open("./popup.html", "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
+}
 
         // 💡 인덱스 창 검색창을 비우고 팝업창을 관제 대기 상태 및 주차관제 화면 뒤로 숨기는 전담 함수
         function clearSearchAndPopup() {
