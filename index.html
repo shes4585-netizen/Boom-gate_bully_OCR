@@ -198,8 +198,6 @@
         let focusedRecordId = null; 
         let popupWindow = null;     
         let isWarnSortActive = false;
-
-        // 💡 10초 카운트다운용 제어 바구니
         let autoClearTimer = null;
 
         function initDateTimePickers() {
@@ -253,13 +251,12 @@
             popupWindow = window.open("popup.html", "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
         }
 
-        // 💡 10초 후 인덱스 창과 팝업창을 태초의 대기 상태로 되돌리는 함수
+        // 💡 [신중 조율] 15초 리셋 시 팝업창을 관제화면 뒤로 완벽히 숨기는 전담 함수
         function clearSearchAndPopup() {
             document.getElementById("searchInput").value = "";
             focusedRecordId = null;
-            searchCar(); // 인덱스 창 표 복원
+            searchCar(); 
 
-            // 팝업창에 리셋 신호 안전하게 전송
             if (popupWindow && !popupWindow.closed) {
                 popupWindow.postMessage({
                     type: "POPUP_SEARCH",
@@ -268,6 +265,10 @@
                     isWarn: false,
                     carNotesArray: []
                 }, "*");
+
+                // 🎯 15초 타이머 종료 시 팝업창을 뒤(일반창)로 밀어 숨깁니다.
+                popupWindow.blur();
+                window.blur();
             }
         }
 
@@ -322,7 +323,6 @@
             setupPagination(currentFilteredData.length);
         }
 
-        // 💡 핵심 브레인: 번호를 가공하고 매칭하여 데이터베이스 조회 및 팝업창 전송을 전담
         function searchCar() {
             const input = document.getElementById("searchInput").value.trim();
             const noResult = document.getElementById("noResult"); const tbody = document.getElementById("tableBody");
@@ -344,7 +344,6 @@
             if (currentPage > maxPage) currentPage = maxPage;
             renderTablePage();
             
-            // 💡 팝업창으로 실시간 강제 데이터 미트 토스 로직 (4자리 감지 시 무조건 구동)
             if (popupWindow && !popupWindow.closed && input.length === 4) {
                 const matchedRecords = carData.filter(item => {
                     if (!item.number) return false;
@@ -355,7 +354,6 @@
                 const isWarn = matchedRecords.some(item => item.isWarn); 
                 const notesArray = matchedRecords.map(item => item.note || "");
 
-                // 팝업창 내부로 4자리 숫자 및 위반사항 일체 살포
                 popupWindow.postMessage({
                     type: "POPUP_SEARCH",
                     carNumber: input,
@@ -363,20 +361,17 @@
                     isWarn: isWarn,
                     carNotesArray: notesArray 
                 }, "*");
+
+                // 🎯 [신중 조율] 차량 번호 감지 즉시 팝업창을 화면 맨 위로 강제 호출합니다.
+                popupWindow.focus();
             }
         }
 
-        // 💡 수동 입력창 이벤트 수신 및 무한 루프 락 해제 제어기
         window.addEventListener("message", function(event) {
-            // 외부(팝업창 내부의 인풋 등)에서 넘어온 순수 조회 신호일 때만 가동
             if (event.data && event.data.type === "POPUP_SEARCH" && event.data.carNumber !== "") {
                 const targetNum = event.data.carNumber;
-                
-                // 루프 버그 방지 조건문 추가
                 if (document.getElementById("searchInput").value === targetNum) return;
-                
                 document.getElementById("searchInput").value = targetNum;
-                
                 if (autoClearTimer) clearTimeout(autoClearTimer);
 
                 const matchedRecords = carData.filter(item => {
@@ -393,11 +388,12 @@
                 }
                 
                 searchCar();
+                
+                // 🎯 팝업 수동 조회 시에도 정확히 15초(15000ms) 후 대기 상태 및 일반창 뒤로 숨기기 가동
                 autoClearTimer = setTimeout(clearSearchAndPopup, 15000);
             }
         });
 
-        // 💡 파이썬 안테나 또는 테스트베드 안테나 수신 모듈
         function connectOCRWebSocket() {
             const socket = new WebSocket("ws://localhost:8080");
             
@@ -405,10 +401,7 @@
                 const data = JSON.parse(event.data);
                 if (data.type === "AUTO_DETECT") {
                     const detectedNum = data.carNumber;
-                    
-                    // 인덱스 창 검색창에 인식 번호 바인딩
                     document.getElementById("searchInput").value = detectedNum;
-                    
                     if (autoClearTimer) clearTimeout(autoClearTimer);
 
                     const matchedRecords = carData.filter(item => {
@@ -424,10 +417,9 @@
                         focusedRecordId = null;
                     }
                     
-                    // 💡 번호 수집 즉시 조회를 때려서 내부 postMessage가 가동되도록 유도
                     searchCar();
                     
-                    // 💡 상시 표출 타이머 15초 세팅 작동
+                    // 🎯 [오더 반영] 파이썬 스캔 차량 입차 시 정확히 15초(15000ms) 후 자동 리셋 및 화면 뒤로 숨기기 시작
                     autoClearTimer = setTimeout(clearSearchAndPopup, 15000);
                 }
             };
@@ -510,7 +502,7 @@
                     const lines = e.target.result.split(/\r?\n/); const newData = []; let tId = 1;
                     for (let i = 1; i < lines.length; i++) {
                         const line = lines[i].trim(); if (!line) continue;
-                        const matches = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                        const matches = line.split(/,(?=(?:?:[^"]*"){2})*[^"]*$)/);
                         if (matches.length >= 6) {
                             const clean = (val) => val ? val.replace(/^"|"$/g, "").replace(/""/g, '"').trim() : "";
                             let numVal = clean(matches[5]);
