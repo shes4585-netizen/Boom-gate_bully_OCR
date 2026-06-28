@@ -244,21 +244,23 @@
             searchCar();
         }
 
-        // 💡 [핵심 패치 완료] 로컬과 깃허브 서버 환경을 자동 분석하여 무조건 성공하는 절대 주소(Full URL) 동적 생성기 기동
+        // 🎯 [완벽 고정 패치] 주소창의 꼬임(끝자리 슬래시 등)을 원천 차단하고 순정 팝업 경로를 강제로 획득하는 파괴 버전
         function openSearchPopup() {
             const popupWidth = 230; const popupHeight = 380;
             const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
             const topPosition = (window.screen.height / 2) - (popupHeight / 2);
             
-            // 현재 메인창의 웹 브라우저 호스팅 주소 기반 풀 빌드 경로 분석 처리
-            const currentUrl = window.location.href;
-            const urlObj = new URL(currentUrl);
-            const pathSegments = urlObj.pathname.split('/');
-            pathSegments.pop(); // index.html 탈락 처리
-            pathSegments.push('popup.html'); // 동일 도메인 팝업 레이어 합체
-            urlObj.pathname = pathSegments.join('/');
+            // 주소창에서 불필요한 파일명이나 꼬인 슬래시를 전부 정리하고 깨끗한 기준 도메인 확보
+            let baseUrl = window.location.href.split('?')[0].split('#')[0];
+            if (baseUrl.endsWith('index.html')) {
+                baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/'));
+            }
+            if (baseUrl.endsWith('/')) {
+                baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+            }
             
-            const finalPopupUrl = urlObj.toString(); // 깃허브 도메인 연동 최적화 절대 주소 완성
+            // 저장소 이름 뒤에 정확하게 딱 한 개의 슬래시와 파일명만 붙여 절대 주소 강제 완성
+            const finalPopupUrl = baseUrl + "/popup.html";
 
             popupWindow = window.open(finalPopupUrl, "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
         }
