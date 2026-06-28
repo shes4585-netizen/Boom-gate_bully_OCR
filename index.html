@@ -198,8 +198,6 @@
         let focusedRecordId = null; 
         let popupWindow = null;     
         let isWarnSortActive = false;
-
-        // 💡 20초 카운트다운 자동 초기화용 시한폭탄 타이머
         let autoClearTimer = null;
 
         function initDateTimePickers() {
@@ -246,23 +244,30 @@
             searchCar();
         }
 
-        // 💡 기존 코드 (약 170번째 줄 부근)
-    function openSearchPopup() {
-    const popupWidth = 230; const popupHeight = 380;
-    const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
-    const topPosition = (window.screen.height / 2) - (popupHeight / 2);
-    
-    // ❌ 기존: "popup.html" -> ⭕ 변경: "./popup.html" (앞에 점과 슬래시 추가)
-    popupWindow = window.open("./popup.html", "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
-}
+        // 💡 [핵심 패치 완료] 로컬과 깃허브 서버 환경을 자동 분석하여 무조건 성공하는 절대 주소(Full URL) 동적 생성기 기동
+        function openSearchPopup() {
+            const popupWidth = 230; const popupHeight = 380;
+            const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
+            const topPosition = (window.screen.height / 2) - (popupHeight / 2);
+            
+            // 현재 메인창의 웹 브라우저 호스팅 주소 기반 풀 빌드 경로 분석 처리
+            const currentUrl = window.location.href;
+            const urlObj = new URL(currentUrl);
+            const pathSegments = urlObj.pathname.split('/');
+            pathSegments.pop(); // index.html 탈락 처리
+            pathSegments.push('popup.html'); // 동일 도메인 팝업 레이어 합체
+            urlObj.pathname = pathSegments.join('/');
+            
+            const finalPopupUrl = urlObj.toString(); // 깃허브 도메인 연동 최적화 절대 주소 완성
 
-        // 💡 인덱스 창 검색창을 비우고 팝업창을 관제 대기 상태 및 주차관제 화면 뒤로 숨기는 전담 함수
+            popupWindow = window.open(finalPopupUrl, "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
+        }
+
         function clearSearchAndPopup() {
             document.getElementById("searchInput").value = "";
             focusedRecordId = null;
-            searchCar(); // 인덱스 창 표 복원
+            searchCar(); 
 
-            // 팝업창으로 안전 무결성 클리어 데이터 송출
             if (popupWindow && !popupWindow.closed) {
                 popupWindow.postMessage({
                     type: "POPUP_SEARCH",
@@ -272,7 +277,6 @@
                     carNotesArray: []
                 }, "*");
 
-                // 🎯 [오더 반영] 20초가 끝나 청소가 완료되면 팝업창을 주차관제 화면 뒤로 숨깁니다!
                 popupWindow.blur(); 
                 window.blur(); 
             }
@@ -329,7 +333,6 @@
             setupPagination(currentFilteredData.length);
         }
 
-        // 💡 실시간 검색 핵심 브레인: 인덱스 창의 리스트 필터링 및 팝업창 무선 무전 토스 전담
         function searchCar() {
             const input = document.getElementById("searchInput").value.trim();
             const noResult = document.getElementById("noResult"); const tbody = document.getElementById("tableBody");
@@ -351,7 +354,6 @@
             if (currentPage > maxPage) currentPage = maxPage;
             renderTablePage();
             
-            // 💡 4자리 숫자가 포착되면 즉시 팝업창으로 데이터 직통 전송 구문 기동
             if (popupWindow && !popupWindow.closed && input.length === 4) {
                 const matchedRecords = carData.filter(item => {
                     if (!item.number) return false;
@@ -362,7 +364,6 @@
                 const isWarn = matchedRecords.some(item => item.isWarn); 
                 const notesArray = matchedRecords.map(item => item.note || "");
 
-                // 팝업창 내부로 4자리 데이터 주입
                 popupWindow.postMessage({
                     type: "POPUP_SEARCH",
                     carNumber: input,
@@ -371,20 +372,15 @@
                     carNotesArray: notesArray 
                 }, "*");
 
-                // 🎯 [오더 반영] 새 차량이 검색되면 팝업창을 주차관제 화면 맨 위로 강제 호출(포커스)합니다!
                 popupWindow.focus();
             }
         }
 
-        // 💡 팝업창 수동 역방향 조회 처리기 (무한 동결 루프 전면 개선)
         window.addEventListener("message", function(event) {
             if (event.data && event.data.type === "POPUP_SEARCH" && event.data.carNumber !== "") {
                 const targetNum = event.data.carNumber;
-                
                 if (document.getElementById("searchInput").value === targetNum) return;
-                
                 document.getElementById("searchInput").value = targetNum;
-                
                 if (autoClearTimer) clearTimeout(autoClearTimer);
 
                 const matchedRecords = carData.filter(item => {
@@ -401,13 +397,10 @@
                 }
                 
                 searchCar();
-                
-                // 🎯 [오더 반영] 수동 조작 시에도 20초 후 자동 뒤로 숨기기 및 리셋 작동
                 autoClearTimer = setTimeout(clearSearchAndPopup, 20000);
             }
         });
 
-        // 💡 파이썬 및 테스트 프로그램 웹소켓 전용 리시버 엔진
         function connectOCRWebSocket() {
             const socket = new WebSocket("ws://localhost:8080");
             
@@ -415,9 +408,7 @@
                 const data = JSON.parse(event.data);
                 if (data.type === "AUTO_DETECT") {
                     const detectedNum = data.carNumber;
-                    
                     document.getElementById("searchInput").value = detectedNum;
-                    
                     if (autoClearTimer) clearTimeout(autoClearTimer);
 
                     const matchedRecords = carData.filter(item => {
@@ -434,8 +425,6 @@
                     }
                     
                     searchCar();
-                    
-                    // 💡 [오더 반영] 20초(20000ms) 동안 팝업창을 띄운 뒤 자동 복귀(뒤로 숨기기) 카운트다운 시작
                     autoClearTimer = setTimeout(clearSearchAndPopup, 20000);
                 }
             };
