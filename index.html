@@ -244,14 +244,26 @@
             searchCar();
         }
 
+        // 🎯 1. 깃허브 무반응(주소 꼬임) 완벽 해결용 절대 주소 오픈 로직 적용
         function openSearchPopup() {
             const popupWidth = 230; const popupHeight = 380;
             const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
             const topPosition = (window.screen.height / 2) - (popupHeight / 2);
-            popupWindow = window.open("popup.html", "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
+            
+            // 현재 깃허브 주소를 자동 분석하여 무조건 성공하는 완벽한 popup.html 경로 생성
+            let baseUrl = window.location.href.split('?')[0].split('#')[0];
+            if (baseUrl.endsWith('index.html')) {
+                baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/'));
+            }
+            if (baseUrl.endsWith('/')) {
+                baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+            }
+            const finalPopupUrl = baseUrl + "/popup.html";
+
+            popupWindow = window.open(finalPopupUrl, "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
         }
 
-        // 💡 [신중 조율] 15초 리셋 시 팝업창을 관제화면 뒤로 완벽히 숨기는 전담 함수
+        // 🎯 2. 정확히 15초 뒤 팝업창을 관제화면 뒤(일반창)로 완벽히 숨기는 전담 함수
         function clearSearchAndPopup() {
             document.getElementById("searchInput").value = "";
             focusedRecordId = null;
@@ -266,9 +278,9 @@
                     carNotesArray: []
                 }, "*");
 
-                // 🎯 15초 타이머 종료 시 팝업창을 뒤(일반창)로 밀어 숨깁니다.
+                // 15초 타이머 종료 시 팝업창을 일반창 뒤로 밀어버림(blur)
                 popupWindow.blur();
-                window.blur();
+                window.blur(); 
             }
         }
 
@@ -362,7 +374,7 @@
                     carNotesArray: notesArray 
                 }, "*");
 
-                // 🎯 [신중 조율] 차량 번호 감지 즉시 팝업창을 화면 맨 위로 강제 호출합니다.
+                // 🎯 3. 차량 번호 감지 즉시 팝업창을 화면 맨 위로 강제 호출 (포커스)
                 popupWindow.focus();
             }
         }
@@ -389,7 +401,7 @@
                 
                 searchCar();
                 
-                // 🎯 팝업 수동 조회 시에도 정확히 15초(15000ms) 후 대기 상태 및 일반창 뒤로 숨기기 가동
+                // 🎯 4. 수동 조회 시 정확히 15초(15000ms) 유지 후 창 숨기기
                 autoClearTimer = setTimeout(clearSearchAndPopup, 15000);
             }
         });
@@ -419,7 +431,7 @@
                     
                     searchCar();
                     
-                    // 🎯 [오더 반영] 파이썬 스캔 차량 입차 시 정확히 15초(15000ms) 후 자동 리셋 및 화면 뒤로 숨기기 시작
+                    // 🎯 5. 파이썬 스캔 입차 시 정확히 15초(15000ms) 유지 후 자동 리셋 및 창 숨기기
                     autoClearTimer = setTimeout(clearSearchAndPopup, 15000);
                 }
             };
