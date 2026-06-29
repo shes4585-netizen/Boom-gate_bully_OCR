@@ -4,129 +4,35 @@
     <meta charset="UTF-8">
     <title>모니터링</title>
     <style>
+        /* 기존 스타일 전체 유지 */
         body {
-            margin: 0;
-            padding: 20px;
-            background-color: #ffffff;
-            color: #2d3748;
+            margin: 0; padding: 20px; background-color: #ffffff; color: #2d3748;
             font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            box-sizing: border-box;
-            overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; box-sizing: border-box; overflow: hidden;
             transition: all 0.4s ease-in-out;
         }
 
-        body.has-note {
-            justify-content: flex-start;
-            padding-top: 15px;
+        /* 💡 추가: 20초 강조용 CSS */
+        .alert-mode { 
+            background-color: #fff5f5 !important; 
+            border: 8px solid #e53e3e !important; 
+            box-shadow: 0 0 40px rgba(229, 62, 62, 0.9) !important;
         }
 
-        .siren-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 20px;
-            transition: all 0.4s ease-in-out;
-        }
-
-        body.has-note .siren-container {
-            margin-bottom: 10px;
-        }
-
-        .siren-img {
-            width: 75px;
-            height: 75px;
-            object-fit: contain;
-            border-radius: 6px;
-        }
-
-        .display-box {
-            width: 100%;
-            max-width: 210px;
-            background-color: #ffffff;
-            border: 4px solid #cbd5e0;
-            border-radius: 12px;
-            padding: 16px 0;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-            transition: all 0.4s ease-in-out;
-        }
-
-        .car-number-input {
-            width: 95%;
-            border: none;
-            background: transparent;
-            text-align: center;
-            font-size: 36px;
-            font-weight: 900;
-            letter-spacing: 2px;
-            color: #1a202c;
-            outline: none;
-            padding: 0;
-            margin: 0;
-            font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-        }
-
-        @keyframes blinkRed {
-            0% { opacity: 1; color: #e53e3e; }
-            50% { opacity: 0.1; color: #e53e3e; }
-            100% { opacity: 1; color: #e53e3e; }
-        }
-        .status-warn {
-            animation: blinkRed 0.8s linear infinite;
-        }
-
-        @keyframes blinkOrange {
-            0% { opacity: 1; color: #dd6b20; }
-            50% { opacity: 0.1; color: #dd6b20; }
-            100% { opacity: 1; color: #dd6b20; }
-        }
-        .status-match {
-            animation: blinkOrange 0.8s linear infinite;
-        }
-
-        .status-text {
-            margin-top: 20px;
-            font-size: 13.5px;
-            font-weight: 800;
-            color: #4a5568;
-            letter-spacing: -0.4px;
-            text-align: center;
-            transition: all 0.4s ease-in-out;
-            width: 100%;
-            max-width: 220px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: clip;
-        }
-        
-        body.has-note .status-text {
-            margin-top: 10px;
-        }
-
-        /* 📝 핵심 키워드 리스트 박스 디자인 */
-        .note-text {
-            margin-top: 12px;
-            font-size: 13px;
-            font-weight: bold;
-            color: #c53030; /* 강조를 위해 붉은 계열 색상 차용 */
-            background-color: #fffaf0;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 2px dashed #f6ad55;
-            width: 90%;
-            max-width: 210px;
-            word-break: break-all;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            display: none;
-            line-height: 1.5; /* 여러 줄 표시용 행간 배려 */
-        }
+        body.has-note { justify-content: flex-start; padding-top: 15px; }
+        .siren-container { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 20px; transition: all 0.4s ease-in-out; }
+        body.has-note .siren-container { margin-bottom: 10px; }
+        .siren-img { width: 75px; height: 75px; object-fit: contain; border-radius: 6px; }
+        .display-box { width: 100%; max-width: 210px; background-color: #ffffff; border: 4px solid #cbd5e0; border-radius: 12px; padding: 16px 0; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.06); transition: all 0.4s ease-in-out; }
+        .car-number-input { width: 95%; border: none; background: transparent; text-align: center; font-size: 36px; font-weight: 900; letter-spacing: 2px; color: #1a202c; outline: none; padding: 0; margin: 0; font-family: inherit; }
+        @keyframes blinkRed { 0% { opacity: 1; color: #e53e3e; } 50% { opacity: 0.1; color: #e53e3e; } 100% { opacity: 1; color: #e53e3e; } }
+        .status-warn { animation: blinkRed 0.8s linear infinite; }
+        @keyframes blinkOrange { 0% { opacity: 1; color: #dd6b20; } 50% { opacity: 0.1; color: #dd6b20; } 100% { opacity: 1; color: #dd6b20; } }
+        .status-match { animation: blinkOrange 0.8s linear infinite; }
+        .status-text { margin-top: 20px; font-size: 13.5px; font-weight: 800; color: #4a5568; letter-spacing: -0.4px; text-align: center; transition: all 0.4s ease-in-out; width: 100%; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+        body.has-note .status-text { margin-top: 10px; }
+        .note-text { margin-top: 12px; font-size: 13px; font-weight: bold; color: #c53030; background-color: #fffaf0; padding: 8px 12px; border-radius: 8px; border: 2px dashed #f6ad55; width: 90%; max-width: 210px; word-break: break-all; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: none; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -144,47 +50,64 @@
     <div id="noteText" class="note-text"></div>
 
     <script>
-    // 부모창(index.html)에서 넘어오는 신호 처리
+        // 💡 추가: 20초 제어용 타이머 변수
+        let autoClearTimer;
+
         window.addEventListener("message", function(event) {
-            const { carNumber, hasMatch, isWarn, carNotesArray } = event.data;
+            if (!event.data || event.data.type !== "POPUP_SEARCH") return;
 
-            if (carNumber === "") {
-                inputEl.value = "";
-                inputEl.classList.remove("status-match");
-                imgLeft.src = "100.png";
-                statusText.innerText = "대기 중...";
-                statusText.style.color = "#2d3748";
-                bodyEl.classList.remove("has-note", "alert-mode");
-                noteContainer.innerHTML = "";
-                return;
-            }
-
-            inputEl.value = carNumber;
+            const bodyEl = document.body;
+            const inputEl = document.getElementById("popupInput");
+            const imgLeft = document.getElementById("sirenLeft");
+            const statusText = document.getElementById("statusText");
+            const noteText = document.getElementById("noteText");
             
-            // 💡 [핵심] 메시지 수신 시 20초간 '항상 위' 강조 효과 적용
+            const num = event.data.carNumber;
+            const hasMatch = event.data.hasMatch;
+            const isWarn = event.data.isWarn;
+            const carNotesArray = event.data.carNotesArray || [];
+            
+            // 💡 [핵심] 메시지 수신 시 20초 강조 모드 즉시 적용
             bodyEl.classList.add("alert-mode");
-            window.focus(); // 창 활성화
+            window.focus(); // 팝업창을 눈앞으로 강제 활성화
 
             clearTimeout(autoClearTimer);
             autoClearTimer = setTimeout(() => {
                 bodyEl.classList.remove("alert-mode");
             }, 20000);
 
-            if (hasMatch) {
-                if (isWarn) {
-                    inputEl.classList.add("status-match");
-                    imgLeft.src = "100-warn.png";
-                    statusText.innerText = "🚨 경고: 관리 대상 차량";
+            // 기존 로직 그대로 유지
+            inputEl.className = "car-number-input"; 
+            inputEl.style.color = "#1a202c";
+            bodyEl.classList.remove("has-note");
+            noteText.style.display = "none";
+            noteText.innerHTML = "";
+
+            if (!num || num.toString().trim() === "") {
+                inputEl.value = "";
+                imgLeft.src = "100.png";
+                statusText.innerText = "차량 진입 대기 중";
+                statusText.style.color = "#4a5568";
+                return;
+            }
+
+            inputEl.value = num;
+
+            if (hasMatch === true || hasMatch === "true") {
+                if (isWarn === true || isWarn === "true") {
+                    inputEl.classList.add("status-warn");
+                    imgLeft.src = "100-3.gif";
+                    statusText.innerText = "🚨 위험: 상습 위반 차량 진입!";
                     statusText.style.color = "#e53e3e";
                 } else {
                     inputEl.classList.add("status-match");
                     imgLeft.src = "100.png";
-                    statusText.innerText = "💡 관심: 과거 위반 이력";
+                    statusText.innerText = "💡 관심: 과거 위반 이력 차량";
                     statusText.style.color = "#dd6b20";
                 }
             } else {
                 imgLeft.src = "100.png";
-                statusText.innerText = "✅ 정상: 특이사항 없음";
+                statusText.innerText = "✅ 정상: 특이사항 없어영";
                 statusText.style.color = "#2b6cb0";
             }
 
@@ -193,18 +116,16 @@
                 if (!note) return;
                 const matches = note.match(/\[[^\]]+\]/g);
                 if (matches) {
-                    matches.forEach(k => { if(!combinedKeywords.includes(k)) combinedKeywords.push(k); });
+                    matches.forEach(k => {
+                        if(!combinedKeywords.includes(k)) { combinedKeywords.push(k); }
+                    });
                 }
             });
 
             if (combinedKeywords.length > 0) {
                 bodyEl.classList.add("has-note");
-                noteContainer.innerHTML = combinedKeywords.map(k => 
-                    `<div style="margin:5px; padding:8px; background:#edf2f7; border-radius:4px; font-size:14px; font-weight:bold;">${k}</div>`
-                ).join("");
-            } else {
-                bodyEl.classList.remove("has-note");
-                noteContainer.innerHTML = "";
+                noteText.innerHTML = combinedKeywords.join("<br>"); 
+                noteText.style.display = "block";
             }
         });
     </script>
