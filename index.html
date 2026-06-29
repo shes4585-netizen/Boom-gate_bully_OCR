@@ -178,8 +178,41 @@
         ];
 
         // [수정] 로컬 스토리지 로드
-        let carData = JSON.parse(localStorage.getItem("carData")) || [...defaultData];
-        
+        let carData = JSON.parse(localStorage.getItem("carData")) || [];
+        // [기능] 데이터 추가
+        function addData() {
+            const newCar = {
+                id: Date.now(),
+                number: document.getElementById("addCar").value,
+                dong: document.getElementById("addDong").value,
+                ho: document.getElementById("addHo").value,
+                note: "",
+                inTime: new Date().toLocaleString()
+            };
+            carData.push(newCar);
+            saveData();
+            searchCar();
+        }
+
+        // [기능] 데이터 수정 (저장)
+        function saveEditData(id) {
+            const row = document.getElementById(`row_${id}`);
+            const updatedCar = carData.find(c => c.id === id);
+            updatedCar.number = row.querySelector('.edit-car').value;
+            updatedCar.dong = row.querySelector('.edit-dong').value;
+            updatedCar.ho = row.querySelector('.edit-ho').value;
+            saveData();
+            searchCar();
+        }
+
+        // [기능] 데이터 삭제
+        function deleteData(id) {
+            if(confirm("정말 삭제하시겠습니까?")) {
+                carData = carData.filter(c => c.id !== id);
+                saveData();
+                searchCar();
+            }
+        }
         // 데이터 저장 함수
         function saveData() { 
             localStorage.setItem("carData", JSON.stringify(carData)); 
