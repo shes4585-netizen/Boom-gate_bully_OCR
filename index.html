@@ -194,24 +194,28 @@
             searchCar();
         }
 
-        // [수정] 3. 데이터 수정 (저장) 함수
-        function saveEditData(id) {
-            const row = document.getElementById(`row_${id}`);
-            if (!row) return;
+        // [기능] 데이터 수정 (저장)
+function saveEditData(id) {
+    // 1. 해당 행 찾기
+    const row = document.getElementById(`row_${id}`);
+    if (!row) return;
 
-            const updatedCar = carData.find(c => parseInt(c.id) === parseInt(id));
-            if (updatedCar) {
-                updatedCar.number = row.querySelector('.edit-car').value;
-                updatedCar.dong = row.querySelector('.edit-dong').value;
-                updatedCar.ho = row.querySelector('.edit-ho').value;
-                updatedCar.note = row.querySelector('.edit-input-note').value;
-                
-                // 수정 완료 후 중요한 조치
-                editId = null; // 수정 모드 해제
-                saveData();    // 데이터 저장
-                searchCar();   // 화면 재검색 및 렌더링
-            }
-        }
+    // 2. carData에서 해당 데이터 찾기
+    const updatedCar = carData.find(c => String(c.id) === String(id));
+    
+    if (updatedCar) {
+        // 3. 입력 필드에서 값 가져오기
+        updatedCar.number = row.querySelector('.edit-car').value;
+        updatedCar.dong = row.querySelector('.edit-dong').value;
+        updatedCar.ho = row.querySelector('.edit-ho').value;
+        updatedCar.note = row.querySelector('.edit-input-note').value;
+        
+        // 4. 데이터 저장 및 수정 모드 해제
+        editId = null; 
+        saveData();    // localStorage 저장
+        searchCar();   // 화면 전체 갱신 (수정 모드 해제된 상태로 그리기)
+    }
+}
         // [추가] 수정 모드 진입 함수
         function enableEditMode(id) {
             editId = parseInt(id); // 수정할 ID 설정
