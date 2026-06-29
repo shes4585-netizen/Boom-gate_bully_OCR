@@ -196,25 +196,36 @@
 
         // [기능] 데이터 수정 (저장)
 function saveEditData(id) {
-    // 1. 해당 행 찾기
-    const row = document.getElementById(`row_${id}`);
-    if (!row) return;
+    const target = carData.find(c => parseInt(c.id) === parseInt(id));
+    if (!target) return;
 
-    // 2. carData에서 해당 데이터 찾기
-    const updatedCar = carData.find(c => String(c.id) === String(id));
+    // renderTablePage에서 부여한 ID들을 정확히 참조합니다.
+    target.isWarn = document.getElementById(`editWarn_${id}`).checked;
+    target.type = document.querySelector(`input[name="editType_${id}"]:checked`)?.value || "일반";
     
-    if (updatedCar) {
-        // 3. 입력 필드에서 값 가져오기
-        updatedCar.number = row.querySelector('.edit-car').value;
-        updatedCar.dong = row.querySelector('.edit-dong').value;
-        updatedCar.ho = row.querySelector('.edit-ho').value;
-        updatedCar.note = row.querySelector('.edit-input-note').value;
-        
-        // 4. 데이터 저장 및 수정 모드 해제
-        editId = null; 
-        saveData();    // localStorage 저장
-        searchCar();   // 화면 전체 갱신 (수정 모드 해제된 상태로 그리기)
+    // 날짜와 시간 결합
+    const inDate = document.getElementById(`editInDate_${id}`).value;
+    const inHour = document.getElementById(`editInHour_${id}`).value;
+    const inMin = document.getElementById(`editInMin_${id}`).value;
+    target.inTime = `${inDate} ${inHour}:${inMin}`;
+
+    const outDate = document.getElementById(`editOutDate_${id}`).value;
+    const outHour = document.getElementById(`editOutHour_${id}`).value;
+    const outMin = document.getElementById(`editOutMin_${id}`).value;
+    if (outDate && outHour && outMin) {
+        target.outTime = `${outDate} ${outHour}:${outMin}`;
+    } else {
+        target.outTime = ""; // 출차 시간 비움
     }
+
+    target.number = document.getElementById(`editCar_${id}`).value;
+    target.dong = document.getElementById(`editDong_${id}`).value;
+    target.ho = document.getElementById(`editHo_${id}`).value;
+    target.note = document.getElementById(`editNote_${id}`).value;
+
+    editId = null; // 수정 모드 종료
+    saveData();    // 로컬스토리지 저장
+    renderTablePage(); // 화면 갱신
 }
         // [추가] 수정 모드 진입 함수
         function enableEditMode(id) {
