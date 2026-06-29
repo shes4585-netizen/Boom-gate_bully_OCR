@@ -4,35 +4,47 @@
     <meta charset="UTF-8">
     <title>모니터링</title>
     <style>
-        /* 기존 스타일 전체 유지 */
-        body { margin: 0; padding: 20px; background-color: #ffffff; color: #2d3748; font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; box-sizing: border-box; overflow: hidden; transition: all 0.4s ease-in-out; }
-        /* 💡 추가: 20초 강조 스타일 */
-        .alert-mode { background-color: #fff5f5 !important; border: 8px solid #e53e3e !important; box-shadow: 0 0 40px rgba(229, 62, 62, 0.9) !important; }
-        
+        /* 기본 레이아웃 및 디자인 */
+        body {
+            margin: 0; padding: 20px; background-color: #ffffff; color: #2d3748;
+            font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; box-sizing: border-box; overflow: hidden;
+            transition: all 0.4s ease-in-out;
+        }
+
         body.has-note { justify-content: flex-start; padding-top: 15px; }
         .siren-container { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 20px; transition: all 0.4s ease-in-out; }
         body.has-note .siren-container { margin-bottom: 10px; }
         .siren-img { width: 75px; height: 75px; object-fit: contain; border-radius: 6px; }
         .display-box { width: 100%; max-width: 210px; background-color: #ffffff; border: 4px solid #cbd5e0; border-radius: 12px; padding: 16px 0; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.06); transition: all 0.4s ease-in-out; }
         .car-number-input { width: 95%; border: none; background: transparent; text-align: center; font-size: 36px; font-weight: 900; letter-spacing: 2px; color: #1a202c; outline: none; padding: 0; margin: 0; font-family: inherit; }
+        
         @keyframes blinkRed { 0% { opacity: 1; color: #e53e3e; } 50% { opacity: 0.1; color: #e53e3e; } 100% { opacity: 1; color: #e53e3e; } }
         .status-warn { animation: blinkRed 0.8s linear infinite; }
         @keyframes blinkOrange { 0% { opacity: 1; color: #dd6b20; } 50% { opacity: 0.1; color: #dd6b20; } 100% { opacity: 1; color: #dd6b20; } }
         .status-match { animation: blinkOrange 0.8s linear infinite; }
+        
         .status-text { margin-top: 20px; font-size: 13.5px; font-weight: 800; color: #4a5568; letter-spacing: -0.4px; text-align: center; transition: all 0.4s ease-in-out; width: 100%; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: clip; }
         body.has-note .status-text { margin-top: 10px; }
         .note-text { margin-top: 12px; font-size: 13px; font-weight: bold; color: #c53030; background-color: #fffaf0; padding: 8px 12px; border-radius: 8px; border: 2px dashed #f6ad55; width: 90%; max-width: 210px; word-break: break-all; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: none; line-height: 1.5; }
     </style>
 </head>
 <body>
-    <div class="siren-container"><img id="sirenLeft" src="100.png" alt="경광등" class="siren-img"></div>
-    <div class="display-box"><input type="text" id="popupInput" class="car-number-input" value="" readonly></div>
+
+    <div class="siren-container">
+        <img id="sirenLeft" src="100.png" alt="경광등" class="siren-img">
+    </div>
+
+    <div class="display-box">
+        <input type="text" id="popupInput" class="car-number-input" value="" readonly>
+    </div>
+
     <div id="statusText" class="status-text">차량 진입 대기 중</div>
+    
     <div id="noteText" class="note-text"></div>
 
     <script>
-        let autoClearTimer; // 20초 강조 타이머
-
         window.addEventListener("message", function(event) {
             if (!event.data || event.data.type !== "POPUP_SEARCH") return;
 
@@ -47,16 +59,10 @@
             const isWarn = event.data.isWarn;
             const carNotesArray = event.data.carNotesArray || [];
 
-            // 💡 [핵심] 메시지 수신 시 20초 강조 모드 즉시 적용
-            bodyEl.classList.add("alert-mode");
-            window.focus(); // 창 활성화
+            // 팝업이 데이터 수신 시 강제로 포커스만 가져옴 (강조효과 없이)
+            window.focus();
 
-            clearTimeout(autoClearTimer);
-            autoClearTimer = setTimeout(() => {
-                bodyEl.classList.remove("alert-mode");
-            }, 20000);
-
-            // 기존 로직 유지 (데이터 바인딩)
+            // 리셋 초기화
             inputEl.className = "car-number-input"; 
             inputEl.style.color = "#1a202c";
             bodyEl.classList.remove("has-note");
@@ -67,7 +73,7 @@
                 inputEl.value = "";
                 imgLeft.src = "100.png";
                 statusText.innerText = "차량 진입 대기 중";
-                statusText.style.color = "#4a5568";
+                statusText.color = "#4a5568";
                 return;
             }
 
