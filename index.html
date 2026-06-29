@@ -195,16 +195,28 @@
         }
 
         // [기능] 데이터 수정 (저장)
-        function saveEditData(id) {
+            function saveEditData(id) {
             const row = document.getElementById(`row_${id}`);
-            const updatedCar = carData.find(c => c.id === id);
-            updatedCar.number = row.querySelector('.edit-car').value;
-            updatedCar.dong = row.querySelector('.edit-dong').value;
-            updatedCar.ho = row.querySelector('.edit-ho').value;
-            saveData();
-            searchCar();
+            // id 타입을 일치시키기 위해 parseInt 사용
+            const updatedCar = carData.find(c => parseInt(c.id) === parseInt(id));
+            
+            if (updatedCar) {
+                updatedCar.number = row.querySelector('.edit-car').value;
+                updatedCar.dong = row.querySelector('.edit-dong').value;
+                updatedCar.ho = row.querySelector('.edit-ho').value;
+                updatedCar.note = row.querySelector('.edit-input-note').value;
+                
+                // 주의여부 업데이트 추가
+                updatedCar.isWarn = row.querySelector(`#editWarn_${id}`).checked;
+                
+                // 수정 모드 종료
+                editId = null; 
+                
+                // 중요: 저장 후 반드시 호출해야 하는 함수들
+                saveData(); // 로컬스토리지에 저장
+                renderTablePage(); // 화면 갱신
+            }
         }
-
         // [기능] 데이터 삭제
         function deleteData(id) {
             if(confirm("정말 삭제하시겠습니까?")) {
