@@ -235,12 +235,20 @@
             searchCar();
         }
 
-        function openSearchPopup() {
-            const popupWidth = 230; const popupHeight = 380;
-            const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
-            const topPosition = (window.screen.height / 2) - (popupHeight / 2);
-            popupWindow = window.open("popup.html", "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
-        }
+        // index.html의 openSearchPopup 함수
+    function openSearchPopup() {
+    const popupWidth = 230; 
+    const popupHeight = 380;
+    const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
+    const topPosition = (window.screen.height / 2) - (popupHeight / 2);
+    
+    // 여기서 지정한 이름("모니터링")과 파이썬의 nircmd 명령어가 일치해야 합니다!
+    popupWindow = window.open(
+        "popup.html", 
+        "모니터링", 
+        `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`
+    );
+}
 
         function clearSearchAndPopup() {
             document.getElementById("searchInput").value = "";
