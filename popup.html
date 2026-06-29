@@ -143,80 +143,67 @@
     
     <div id="noteText" class="note-text"></div>
 
-    <script>
+    // 부모창(index.html)에서 넘어오는 신호 처리
         window.addEventListener("message", function(event) {
-            if (!event.data || event.data.type !== "POPUP_SEARCH") return;
+            const { carNumber, hasMatch, isWarn, carNotesArray } = event.data;
 
-            const bodyEl = document.body;
-            const inputEl = document.getElementById("popupInput");
-            const imgLeft = document.getElementById("sirenLeft");
-            const statusText = document.getElementById("statusText");
-            const noteText = document.getElementById("noteText");
-            
-            const num = event.data.carNumber;
-            const hasMatch = event.data.hasMatch;
-            const isWarn = event.data.isWarn;
-            const carNotesArray = event.data.carNotesArray || []; // 배열 데이터 수신
-            
-            // 리셋 초기화
-            inputEl.className = "car-number-input"; 
-            inputEl.style.color = "#1a202c";
-            bodyEl.classList.remove("has-note");
-            noteText.style.display = "none";
-            noteText.innerHTML = ""; // 여러 줄 표시용 HTML 초기화
-
-            if (!num || num.toString().trim() === "") {
+            if (carNumber === "") {
                 inputEl.value = "";
+                inputEl.classList.remove("status-match");
                 imgLeft.src = "100.png";
-                statusText.innerText = "차량 진입 대기 중";
-                statusText.style.color = "#4a5568";
+                statusText.innerText = "대기 중...";
+                statusText.style.color = "#2d3748";
+                bodyEl.classList.remove("has-note", "alert-mode");
+                noteContainer.innerHTML = "";
                 return;
             }
 
-            inputEl.value = num;
+            inputEl.value = carNumber;
+            
+            // 💡 [핵심] 메시지 수신 시 20초간 '항상 위' 강조 효과 적용
+            bodyEl.classList.add("alert-mode");
+            window.focus(); // 창 활성화
 
-            // 상태값에 따른 시인성 제어
-            if (hasMatch === true || hasMatch === "true") {
-                if (isWarn === true || isWarn === "true") {
-                    inputEl.classList.add("status-warn");
-                    imgLeft.src = "100-3.gif";
-                    statusText.innerText = "🚨 위험: 상습 위반 차량 진입!";
+            clearTimeout(autoClearTimer);
+            autoClearTimer = setTimeout(() => {
+                bodyEl.classList.remove("alert-mode");
+            }, 20000);
+
+            if (hasMatch) {
+                if (isWarn) {
+                    inputEl.classList.add("status-match");
+                    imgLeft.src = "100-warn.png";
+                    statusText.innerText = "🚨 경고: 관리 대상 차량";
                     statusText.style.color = "#e53e3e";
                 } else {
                     inputEl.classList.add("status-match");
                     imgLeft.src = "100.png";
-                    statusText.innerText = "💡 관심: 과거 위반 이력 차량";
+                    statusText.innerText = "💡 관심: 과거 위반 이력";
                     statusText.style.color = "#dd6b20";
                 }
             } else {
                 imgLeft.src = "100.png";
-                statusText.innerText = "✅ 정상: 특이사항 없어영";
+                statusText.innerText = "✅ 정상: 특이사항 없음";
                 statusText.style.color = "#2b6cb0";
             }
 
-            // 🎯 오더 반영: 꺽쇠([]) 패턴 안의 핵심 단어만 추출 수집하는 매커니즘
             let combinedKeywords = [];
-            
             carNotesArray.forEach(note => {
                 if (!note) return;
-                // 정규식 활용하여 문자열 내 모든 [내용] 패턴 검색 추출
                 const matches = note.match(/\[[^\]]+\]/g);
                 if (matches) {
-                    matches.forEach(k => {
-                        if(!combinedKeywords.includes(k)) { // 중복 단어 방지
-                            combinedKeywords.push(k);
-                        }
-                    });
+                    matches.forEach(k => { if(!combinedKeywords.includes(k)) combinedKeywords.push(k); });
                 }
             });
 
-            // 추출 완료된 꺽쇠 키워드가 존재한다면 하단 영역 정렬 및 다중 노출 처리
             if (combinedKeywords.length > 0) {
                 bodyEl.classList.add("has-note");
-                
-                // 검색 기록이 3개 이상이어도 줄바꿈으로 깔끔하게 결합하여 표출
-                noteText.innerHTML = combinedKeywords.join("<br>"); 
-                noteText.style.display = "block";
+                noteContainer.innerHTML = combinedKeywords.map(k => 
+                    `<div style="margin:5px; padding:8px; background:#edf2f7; border-radius:4px; font-size:14px; font-weight:bold;">${k}</div>`
+                ).join("");
+            } else {
+                bodyEl.classList.remove("has-note");
+                noteContainer.innerHTML = "";
             }
         });
     </script>
