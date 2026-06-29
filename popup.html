@@ -5,21 +5,10 @@
     <title>모니터링</title>
     <style>
         /* 기존 스타일 전체 유지 */
-        body {
-            margin: 0; padding: 20px; background-color: #ffffff; color: #2d3748;
-            font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; box-sizing: border-box; overflow: hidden;
-            transition: all 0.4s ease-in-out;
-        }
-
-        /* 💡 추가: 20초 강조용 CSS */
-        .alert-mode { 
-            background-color: #fff5f5 !important; 
-            border: 8px solid #e53e3e !important; 
-            box-shadow: 0 0 40px rgba(229, 62, 62, 0.9) !important;
-        }
-
+        body { margin: 0; padding: 20px; background-color: #ffffff; color: #2d3748; font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; box-sizing: border-box; overflow: hidden; transition: all 0.4s ease-in-out; }
+        /* 💡 추가: 20초 강조 스타일 */
+        .alert-mode { background-color: #fff5f5 !important; border: 8px solid #e53e3e !important; box-shadow: 0 0 40px rgba(229, 62, 62, 0.9) !important; }
+        
         body.has-note { justify-content: flex-start; padding-top: 15px; }
         .siren-container { display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 20px; transition: all 0.4s ease-in-out; }
         body.has-note .siren-container { margin-bottom: 10px; }
@@ -36,22 +25,13 @@
     </style>
 </head>
 <body>
-
-    <div class="siren-container">
-        <img id="sirenLeft" src="100.png" alt="경광등" class="siren-img">
-    </div>
-
-    <div class="display-box">
-        <input type="text" id="popupInput" class="car-number-input" value="" readonly>
-    </div>
-
+    <div class="siren-container"><img id="sirenLeft" src="100.png" alt="경광등" class="siren-img"></div>
+    <div class="display-box"><input type="text" id="popupInput" class="car-number-input" value="" readonly></div>
     <div id="statusText" class="status-text">차량 진입 대기 중</div>
-    
     <div id="noteText" class="note-text"></div>
 
     <script>
-        // 💡 추가: 20초 제어용 타이머 변수
-        let autoClearTimer;
+        let autoClearTimer; // 20초 강조 타이머
 
         window.addEventListener("message", function(event) {
             if (!event.data || event.data.type !== "POPUP_SEARCH") return;
@@ -66,17 +46,17 @@
             const hasMatch = event.data.hasMatch;
             const isWarn = event.data.isWarn;
             const carNotesArray = event.data.carNotesArray || [];
-            
+
             // 💡 [핵심] 메시지 수신 시 20초 강조 모드 즉시 적용
             bodyEl.classList.add("alert-mode");
-            window.focus(); // 팝업창을 눈앞으로 강제 활성화
+            window.focus(); // 창 활성화
 
             clearTimeout(autoClearTimer);
             autoClearTimer = setTimeout(() => {
                 bodyEl.classList.remove("alert-mode");
             }, 20000);
 
-            // 기존 로직 그대로 유지
+            // 기존 로직 유지 (데이터 바인딩)
             inputEl.className = "car-number-input"; 
             inputEl.style.color = "#1a202c";
             bodyEl.classList.remove("has-note");
@@ -116,9 +96,7 @@
                 if (!note) return;
                 const matches = note.match(/\[[^\]]+\]/g);
                 if (matches) {
-                    matches.forEach(k => {
-                        if(!combinedKeywords.includes(k)) { combinedKeywords.push(k); }
-                    });
+                    matches.forEach(k => { if(!combinedKeywords.includes(k)) { combinedKeywords.push(k); } });
                 }
             });
 
