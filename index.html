@@ -59,7 +59,7 @@
         .col-time-edit { width: 155px; }
         .col-car   { width: 110px; }  
         .col-dong  { width: 55px; }    
-        .col-ho    { width: 55px; }    
+        .col-ho     { width: 55px; }    
         .col-stay  { width: 90px; font-weight: bold; }
         .col-action { width: 100px; } 
         .col-note-content { text-align: left !important; padding-left: 10px; }
@@ -74,18 +74,22 @@
     </style>
 </head>
 <body>
+
     <div class="header-logo-box">
         <i class="fa-solid fa-shield-halved"></i>
         <span class="logo-text">수푸자21 .Since 25</span>
     </div>
+
     <h2>
         <img src="100-4.png" alt="로고" style="height: 60px; width: auto; vertical-align: middle; border-radius: 4px;">
         진입로 위반차량 검색 시스템 [OCR적용버전]
     </h2>
+    
     <div class="section" style="background-color: #ebf8ff; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #2b6cb0; margin-bottom: 12px;">
         <span style="font-weight: bold; color: #2b6cb0;"><i class="fa-solid fa-building"></i> 수푸자 참교육방</span>
         <button class="btn-popup-open" onclick="openSearchPopup()"><i class="fa-solid fa-bolt"></i> 미니 입력 팝업창 열기</button>
     </div>
+
     <div class="section" style="padding: 0; border: none; background: transparent; margin-bottom: 20px;">
         <div class="info-notice-box" style="display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; align-items: flex-start; gap: 8px;">
@@ -102,6 +106,7 @@
             </div>
         </div>
     </div>
+
     <div class="section">
         <h3>➕ 진입로 위반차량 추가</h3>
         <div class="form-group">
@@ -139,6 +144,7 @@
             <button class="btn-add" onclick="addData()">추가하기</button>
         </div>
     </div>
+
     <div class="section">
         <h3>🔍 위반 차량 검색 및 파일 관리</h3>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
@@ -149,6 +155,7 @@
                 <input type="file" id="restoreFile" accept=".csv" onchange="importFromCSV()" style="display: none;">
             </div>
         </div>
+        
         <table>
             <thead>
                 <tr>
@@ -177,85 +184,23 @@
             { id: 3, type: "일반", inTime: "2026-05-23 09:00", outTime: "", number: "11가1111", dong: "102동", ho: "101호",  note: "[차단바무단통과] 상습 불법주차 주의", isWarn: false }
         ];
 
-        // [수정] 로컬 스토리지 로드
-        let carData = JSON.parse(localStorage.getItem("carData")) || [];
-        // [기능] 데이터 추가
-        function addData() {
-            const newCar = {
-                id: Date.now(),
-                number: document.getElementById("addCar").value,
-                dong: document.getElementById("addDong").value,
-                ho: document.getElementById("addHo").value,
-                note: "",
-                inTime: new Date().toLocaleString()
-            };
-            carData.push(newCar);
-            saveData();
-            searchCar();
+        let carData = JSON.parse(localStorage.getItem("carData"));
+        if (!carData || !Array.isArray(carData) || carData.length === 0) {
+            carData = [...defaultData];
+            localStorage.setItem("carData", JSON.stringify(carData));
         }
 
-        // [기능] 데이터 수정 (저장)
-function saveEditData(id) {
-    const target = carData.find(c => parseInt(c.id) === parseInt(id));
-    if (!target) return;
-
-    // renderTablePage에서 부여한 ID들을 정확히 참조합니다.
-    target.isWarn = document.getElementById(`editWarn_${id}`).checked;
-    target.type = document.querySelector(`input[name="editType_${id}"]:checked`)?.value || "일반";
-    
-    // 날짜와 시간 결합
-    const inDate = document.getElementById(`editInDate_${id}`).value;
-    const inHour = document.getElementById(`editInHour_${id}`).value;
-    const inMin = document.getElementById(`editInMin_${id}`).value;
-    target.inTime = `${inDate} ${inHour}:${inMin}`;
-
-    const outDate = document.getElementById(`editOutDate_${id}`).value;
-    const outHour = document.getElementById(`editOutHour_${id}`).value;
-    const outMin = document.getElementById(`editOutMin_${id}`).value;
-    if (outDate && outHour && outMin) {
-        target.outTime = `${outDate} ${outHour}:${outMin}`;
-    } else {
-        target.outTime = ""; // 출차 시간 비움
-    }
-
-    target.number = document.getElementById(`editCar_${id}`).value;
-    target.dong = document.getElementById(`editDong_${id}`).value;
-    target.ho = document.getElementById(`editHo_${id}`).value;
-    target.note = document.getElementById(`editNote_${id}`).value;
-
-    editId = null; // 수정 모드 종료
-    saveData();    // 로컬스토리지 저장
-    renderTablePage(); // 화면 갱신
-}
-        // [추가] 수정 모드 진입 함수
-        function enableEditMode(id) {
-            editId = parseInt(id); // 수정할 ID 설정
-            searchCar();           // 화면 렌더링 (이때 renderTablePage가 호출됨)
-        }  
-		
-        // [기능] 데이터 삭제
-        function deleteData(id) {
-            if(confirm("정말 삭제하시겠습니까?")) {
-                carData = carData.filter(c => c.id !== id);
-                saveData();
-                searchCar();
-            }
-        }
-        // 데이터 저장 함수
-        function saveData() { 
-            localStorage.setItem("carData", JSON.stringify(carData)); 
-            if (popupWindow && !popupWindow.closed && typeof popupWindow.updateWarnGrid === "function") { popupWindow.updateWarnGrid(); }
-        }
-		// 💡 10초 카운트다운용 제어 바구니
-        let autoClearTimer = null;
-        let popupWindow = null;
-        let isWarnSortActive = false;
+        let nextId = carData.length > 0 ? Math.max(...carData.map(item => parseInt(item.id) || 0)) + 1 : 1;
         let currentPage = 1;       
         const itemsPerPage = 10;   
         let currentFilteredData = [...carData]; 
         let editId = null; 
         let focusedRecordId = null; 
-        let nextId = carData.length > 0 ? Math.max(...carData.map(item => parseInt(item.id) || 0)) + 1 : 1;
+        let popupWindow = null;     
+        let isWarnSortActive = false;
+
+        // 💡 10초 카운트다운용 제어 바구니
+        let autoClearTimer = null;
 
         function initDateTimePickers() {
             const hourSelect = document.getElementById("addInHour");
@@ -278,6 +223,11 @@ function saveEditData(id) {
             return options;
         }
 
+        function saveData() { 
+            localStorage.setItem("carData", JSON.stringify(carData)); 
+            if (popupWindow && !popupWindow.closed && typeof popupWindow.updateWarnGrid === "function") { popupWindow.updateWarnGrid(); }
+        }
+
         function sortMainData() {
             carData.sort((a, b) => {
                 if (isWarnSortActive) {
@@ -296,27 +246,28 @@ function saveEditData(id) {
             searchCar();
         }
 
-        // index.html의 openSearchPopup 함수
-    function openSearchPopup() {
-    const popupWidth = 230; 
-    const popupHeight = 380;
-    const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
-    const topPosition = (window.screen.height / 2) - (popupHeight / 2);
-    
-    // 여기서 지정한 이름("모니터링")과 파이썬의 nircmd 명령어가 일치해야 합니다!
-    popupWindow = window.open(
-        "popup.html", 
-        "모니터링", 
-        `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`
-    );
-}
+        function openSearchPopup() {
+            const popupWidth = 230; const popupHeight = 380;
+            const leftPosition = (window.screen.width / 2) - (popupWidth / 2);
+            const topPosition = (window.screen.height / 2) - (popupHeight / 2);
+            popupWindow = window.open("popup.html", "carPopup", `width=${popupWidth},height=${popupHeight},top=${topPosition},left=${leftPosition},toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no`);
+        }
 
+        // 💡 10초 후 인덱스 창과 팝업창을 태초의 대기 상태로 되돌리는 함수
         function clearSearchAndPopup() {
             document.getElementById("searchInput").value = "";
             focusedRecordId = null;
-            searchCar();
+            searchCar(); // 인덱스 창 표 복원
+
+            // 팝업창에 리셋 신호 안전하게 전송
             if (popupWindow && !popupWindow.closed) {
-                popupWindow.postMessage({ type: "POPUP_SEARCH", carNumber: "", hasMatch: false, isWarn: false, carNotesArray: [] }, "*");
+                popupWindow.postMessage({
+                    type: "POPUP_SEARCH",
+                    carNumber: "",
+                    hasMatch: false,
+                    isWarn: false,
+                    carNotesArray: []
+                }, "*");
             }
         }
 
@@ -370,7 +321,8 @@ function saveEditData(id) {
             });
             setupPagination(currentFilteredData.length);
         }
-		// 💡 핵심 브레인: 번호를 가공하고 매칭하여 데이터베이스 조회 및 팝업창 전송을 전담
+
+        // 💡 핵심 브레인: 번호를 가공하고 매칭하여 데이터베이스 조회 및 팝업창 전송을 전담
         function searchCar() {
             const input = document.getElementById("searchInput").value.trim();
             const noResult = document.getElementById("noResult"); const tbody = document.getElementById("tableBody");
@@ -392,66 +344,146 @@ function saveEditData(id) {
             if (currentPage > maxPage) currentPage = maxPage;
             renderTablePage();
             
+            // 💡 팝업창으로 실시간 강제 데이터 미트 토스 로직 (4자리 감지 시 무조건 구동)
             if (popupWindow && !popupWindow.closed && input.length === 4) {
                 const matchedRecords = carData.filter(item => {
                     if (!item.number) return false;
                     return item.number.replace(/[^0-9]/g, "").slice(-4) === input || item.number.slice(-4) === input;
                 });
+
                 const hasMatch = matchedRecords.length > 0;
                 const isWarn = matchedRecords.some(item => item.isWarn); 
                 const notesArray = matchedRecords.map(item => item.note || "");
-                popupWindow.postMessage({ type: "POPUP_SEARCH", carNumber: input, hasMatch: hasMatch, isWarn: isWarn, carNotesArray: notesArray }, "*");
+
+                // 팝업창 내부로 4자리 숫자 및 위반사항 일체 살포
+                popupWindow.postMessage({
+                    type: "POPUP_SEARCH",
+                    carNumber: input,
+                    hasMatch: hasMatch,
+                    isWarn: isWarn,
+                    carNotesArray: notesArray 
+                }, "*");
             }
         }
 
+        // 💡 수동 입력창 이벤트 수신 및 무한 루프 락 해제 제어기
         window.addEventListener("message", function(event) {
+            // 외부(팝업창 내부의 인풋 등)에서 넘어온 순수 조회 신호일 때만 가동
             if (event.data && event.data.type === "POPUP_SEARCH" && event.data.carNumber !== "") {
                 const targetNum = event.data.carNumber;
+                
+                // 루프 버그 방지 조건문 추가
                 if (document.getElementById("searchInput").value === targetNum) return;
+                
                 document.getElementById("searchInput").value = targetNum;
+                
                 if (autoClearTimer) clearTimeout(autoClearTimer);
+
                 const matchedRecords = carData.filter(item => {
                     if (!item.number) return false;
                     return item.number.replace(/[^0-9]/g, "").slice(-4) === targetNum || item.number.slice(-4) === targetNum;
                 });
+                
                 if (matchedRecords.length > 0) {
                     focusedRecordId = parseInt(matchedRecords[0].id);
                     const globalIndex = carData.findIndex(item => parseInt(item.id) === focusedRecordId);
                     if (globalIndex > -1) currentPage = Math.floor(globalIndex / itemsPerPage) + 1;
-                } else { focusedRecordId = null; }
+                } else { 
+                    focusedRecordId = null; 
+                }
+                
                 searchCar();
                 autoClearTimer = setTimeout(clearSearchAndPopup, 15000);
             }
         });
 
+        // 💡 파이썬 안테나 또는 테스트베드 안테나 수신 모듈
         function connectOCRWebSocket() {
             const socket = new WebSocket("ws://localhost:8080");
+            
             socket.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 if (data.type === "AUTO_DETECT") {
                     const detectedNum = data.carNumber;
+                    
+                    // 인덱스 창 검색창에 인식 번호 바인딩
                     document.getElementById("searchInput").value = detectedNum;
+                    
                     if (autoClearTimer) clearTimeout(autoClearTimer);
+
                     const matchedRecords = carData.filter(item => {
                         if (!item.number) return false;
                         return item.number.replace(/[^0-9]/g, "").slice(-4) === detectedNum || item.number.slice(-4) === detectedNum;
                     });
+                    
                     if (matchedRecords.length > 0) {
                         focusedRecordId = parseInt(matchedRecords[0].id);
                         const gIdx = carData.findIndex(item => parseInt(item.id) === focusedRecordId);
                         if (gIdx > -1) currentPage = Math.floor(gIdx / itemsPerPage) + 1;
-                    } else { focusedRecordId = null; }
+                    } else {
+                        focusedRecordId = null;
+                    }
+                    
+                    // 💡 번호 수집 즉시 조회를 때려서 내부 postMessage가 가동되도록 유도
                     searchCar();
+                    
+                    // 💡 상시 표출 타이머 15초 세팅 작동
                     autoClearTimer = setTimeout(clearSearchAndPopup, 15000);
                 }
             };
+            
             socket.onclose = function() { setTimeout(connectOCRWebSocket, 3000); };
         }
         
         document.addEventListener("DOMContentLoaded", () => { connectOCRWebSocket(); });
 
+        function addData() {
+            const dateVal = document.getElementById("addInDate").value; const hourVal = document.getElementById("addInHour").value; const minVal = document.getElementById("addInMin").value;
+            if(!dateVal) { alert("입차 날짜를 선택해주세요."); return; }
+            const type = document.querySelector('input[name="addType"]:checked').value; const number = document.getElementById("addCar").value.trim();
+            const dong = document.getElementById("addDong").value.trim(); const ho = document.getElementById("addHo").value.trim(); const note = document.getElementById("addNote").value.trim();
+            if (!number) { alert("차량번호는 필수 입력입니다."); return; }
+            carData.push({ id: nextId++, type, inTime: `${dateVal} ${hourVal}:${minVal}`, outTime: "", number, dong, ho, note, isWarn: false });
+            sortMainData(); saveData();
+            document.getElementById("addCar").value = ""; document.getElementById("addDong").value = ""; document.getElementById("addHo").value = ""; document.getElementById("addNote").value = "";
+            document.querySelector('input[name="addType"][value="일반"]').checked = true;
+            initDateTimePickers(); currentPage = 1; searchCar();
+        }
+
         function enableEditMode(id) { editId = parseInt(id); renderTablePage(); }
         function cancelEditMode() { editId = null; renderTablePage(); }
+
+        function saveEditData(id) {
+            const targetId = parseInt(id); const dateIn = document.getElementById(`editInDate_${targetId}`).value;
+            const hourIn = document.getElementById(`editInHour_${targetId}`).value; const minIn = document.getElementById(`editInMin_${targetId}`).value;
+            if(!dateIn) { alert("입차일시는 필수 항목입니다."); return; }
+            const dateOut = document.getElementById(`editOutDate_${targetId}`).value; const hourOut = document.getElementById(`editOutHour_${targetId}`).value; const minOut = document.getElementById(`editOutMin_${targetId}`).value;
+            let editOut = ""; if(dateOut && hourOut && minOut) editOut = `${dateOut} ${hourOut}:${minOut}`;
+            const editType = document.querySelector(`input[name="editType_${targetId}"]:checked`).value;
+            const editCar = document.getElementById(`editCar_${targetId}`).value.trim(); const editDong = document.getElementById(`editDong_${targetId}`).value.trim();
+            const editHo = document.getElementById(`editHo_${targetId}`).value.trim(); const editNote = document.getElementById(`editNote_${targetId}`).value.trim();
+            const editWarn = document.getElementById(`editWarn_${targetId}`).checked;
+            if (!editCar) { alert("차량번호는 필수 입력입니다."); return; }
+            const idx = carData.findIndex(item => parseInt(item.id) === targetId);
+            if (idx > -1) {
+                carData[idx].inTime = `${dateIn} ${hourIn}:${minIn}`; carData[idx].outTime = editOut; carData[idx].type = editType; carData[idx].number = editCar;
+                carData[idx].dong = editDong; carData[idx].ho = editHo; carData[idx].note = editNote; carData[idx].isWarn = editWarn;
+                sortMainData(); saveData(); editId = null; searchCar(); alert("수정이 완료되었습니다.");
+            }
+        }
+
+        function deleteData(id) { if (confirm("정말 삭제하시겠습니까?")) { carData = carData.filter(item => parseInt(item.id) !== parseInt(id)); saveData(); searchCar(); } }
+
+        function exportToCSV() {
+            if (carData.length === 0) return; sortMainData();
+            let csvContent = "주의여부,구분,입차일시,출차일시,체류시간,차량번호,동,호수,비고\n";
+            carData.forEach(item => { 
+                const safeNote = item.note ? item.note.replace(/\r?\n|\r/g, " ").replace(/"/g, '""') : "";
+                csvContent += `${item.isWarn ? 'Y' : 'N'},${item.type || '일반'},${formatDateTime(item.inTime)},${formatDateTime(item.outTime)},${calculateStayTime(item.inTime, item.outTime)},${item.number || ''},${item.dong || ''},${item.ho || ''},"${safeNote}"\n`; 
+            });
+            const now = new Date(); const fileName = `진입로 위반차량_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" }))); link.setAttribute("download", fileName); document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
 
         function formatDateTime(dtStr) {
             if (!dtStr || dtStr === "-" || dtStr.includes("주차중")) return "";
@@ -468,17 +500,6 @@ function saveEditData(id) {
             if (diffMs < 0 || isNaN(diffMs)) return "계산오류";
             const diffMins = Math.floor(diffMs / 60000); const days = Math.floor(diffMins / 1440); const hours = Math.floor((diffMins % 1440) / 60); const mins = diffMins % 60;
             return (days > 0 ? `${days}일 ` : "") + (hours > 0 || days > 0 ? `${hours}시간 ` : "") + `${mins}분`;
-        }
-
-        function exportToCSV() {
-            if (carData.length === 0) return; sortMainData();
-            let csvContent = "주의여부,구분,입차일시,출차일시,체류시간,차량번호,동,호수,비고\n";
-            carData.forEach(item => { 
-                const safeNote = item.note ? item.note.replace(/\r?\n|\r/g, " ").replace(/"/g, '""') : "";
-                csvContent += `${item.isWarn ? 'Y' : 'N'},${item.type || '일반'},${formatDateTime(item.inTime)},${formatDateTime(item.outTime)},${calculateStayTime(item.inTime, item.outTime)},${item.number || ''},${item.dong || ''},${item.ho || ''},"${safeNote}"\n`; 
-            });
-            const now = new Date(); const fileName = `진입로 위반차량_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.csv`;
-            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" }))); link.setAttribute("download", fileName); document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
         function importFromCSV() {
@@ -507,6 +528,23 @@ function saveEditData(id) {
         }
 
         initDateTimePickers(); searchCar();
+
+        setTimeout(() => {
+            const moveInputs = [document.getElementById("addCar"), document.getElementById("addDong"), document.getElementById("addHo"), document.getElementById("addNote")];
+            moveInputs.forEach((input, index) => {
+                if (!input) return;
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'ArrowLeft' && (input.selectionStart === 0 || input.selectionStart === null) && index > 0) {
+                        moveInputs[index - 1].focus();
+                        setTimeout(() => { const len = moveInputs[index - 1].value.length; moveInputs[index - 1].setSelectionRange(len, len); }, 0);
+                        e.preventDefault();
+                    }
+                    if (e.key === 'ArrowRight' && (input.selectionEnd === input.value.length || input.selectionEnd === null) && index < moveInputs.length - 1) {
+                        moveInputs[index + 1].focus(); e.preventDefault();
+                    }
+                });
+            });
+        }, 500); 
     </script>
 </body>
 </html>
